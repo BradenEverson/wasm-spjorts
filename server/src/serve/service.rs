@@ -1,6 +1,6 @@
 //! Hyper service implementation
 
-use std::{fs, future::Future, pin::Pin};
+use std::{fs::File, future::Future, io::Read, pin::Pin};
 
 use http_body_util::Full;
 use hyper::{
@@ -22,9 +22,15 @@ impl Service<Request<body::Incoming>> for SpjortService {
 
         let res = match *req.method() {
             Method::GET => match req.uri().path() {
-                "/" => response
-                    .status(StatusCode::OK)
-                    .body(Full::new(Bytes::from_static(b"Welcome to Spjorts!"))),
+                "/" => {
+                    let mut buf = vec![];
+                    let mut page = File::open("frontend/index.html").expect("Failed to find file");
+                    page.read_to_end(&mut buf)
+                        .expect("Failed to read to buffer");
+                    response
+                        .status(StatusCode::OK)
+                        .body(Full::new(Bytes::copy_from_slice(&buf)))
+                }
                 _ => response
                     .status(StatusCode::NOT_FOUND)
                     .body(Full::new(Bytes::from_static(b"Not Found"))),

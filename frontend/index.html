@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Spjörts</title>
+        <style>
+@font-face {
+    font-family: 'Good Timing';
+    src: url('https://cdn.cdnfonts.com/s/17200/GoodTiming.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+body {
+    font-family: 'Good Timing', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: url('https://example.com/scenic-background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+    text-align: center;
+}
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2rem;
+        }
+
+        .title {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            color: #00aaff;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .menu button {
+            font-size: 1.5rem;
+            padding: 1rem 3rem;
+            background: linear-gradient(90deg, #00aaff, #007acc);
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .menu button:hover {
+            transform: scale(1.1);
+            box-shadow: 2px 2px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .menu button:active {
+            transform: scale(1);
+        }
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="title">Spjörts</div>
+            <div class="menu">
+                <button hx-get="/play" hx-target="body">Play</button>
+                <button hx-get="/connect-controller" hx-target="body">Connect Controller</button>
+            </div>
+        </div>
+    </body>
+</html>
+

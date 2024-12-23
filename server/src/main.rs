@@ -5,7 +5,7 @@
 
 use hyper::server::conn::http1;
 use hyper_util::rt::TokioIo;
-use server::server::{service::SpjortService, SpjortState};
+use server::serve::{service::SpjortService, SpjortState};
 use tokio::net::TcpListener;
 
 #[tokio::main]

@@ -1,5 +1,5 @@
 [workspace]
-members = ["server"]
+members = [ "games/simple-test","server"]
 resolver = "2"
 
 [workspace.package]
