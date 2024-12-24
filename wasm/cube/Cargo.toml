@@ -1,0 +1,11 @@
+[package]
+name = "cube"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+bevy = "0.14.2"
+
+[lints]
+workspace = true

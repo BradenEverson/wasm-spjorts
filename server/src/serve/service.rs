@@ -1,6 +1,6 @@
 //! Hyper service implementation
 
-use std::{fs::File, future::Future, io::Read, pin::Pin};
+use std::{fmt::format, fs::File, future::Future, io::Read, pin::Pin};
 
 use http_body_util::Full;
 use hyper::{
@@ -88,6 +88,16 @@ impl Service<Request<body::Incoming>> for SpjortService {
                         response
                             .status(StatusCode::OK)
                             .body(Full::new(Bytes::copy_from_slice(&buf)))
+                    }
+                    game if game.starts_with("/sports/") => {
+                        let game = GAMES
+                            .iter()
+                            .find(|g| game.contains(g.name))
+                            .expect("Valid game from query");
+                        let game = game.render_game_scene();
+                        response
+                            .status(StatusCode::OK)
+                            .body(Full::new(Bytes::copy_from_slice(game.as_bytes())))
                     }
                     _ => response
                         .status(StatusCode::NOT_FOUND)

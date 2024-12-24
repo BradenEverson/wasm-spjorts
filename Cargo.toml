@@ -1,5 +1,5 @@
 [workspace]
-members = ["server"]
+members = ["server", "wasm/cube"]
 resolver = "2"
 
 [workspace.package]

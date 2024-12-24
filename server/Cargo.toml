@@ -3,6 +3,7 @@ name = "server"
 edition = "2021"
 version.workspace = true
 authors.workspace = true
+default-run = "server"
 
 [dependencies]
 futures = { version = "0.3.30", features = ["executor"] }
