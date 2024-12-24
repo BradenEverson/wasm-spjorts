@@ -22,7 +22,7 @@ async fn main() {
         .await
         .expect("Failed to bind to server");
 
-    println!("🏂");
+    println!("🏂🎾⛳");
     println!("Listening on http://localhost:7878");
 
     tokio::spawn(async move {
