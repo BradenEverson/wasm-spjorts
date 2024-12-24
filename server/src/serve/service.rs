@@ -59,6 +59,16 @@ impl Service<Request<body::Incoming>> for SpjortService {
                             .status(StatusCode::OK)
                             .body(Full::new(Bytes::copy_from_slice(&buf)))
                     }
+                    "/favicon.ico" => {
+                        let mut buf = vec![];
+                        let mut page =
+                            File::open("frontend/favicon.ico").expect("Failed to find file");
+                        page.read_to_end(&mut buf)
+                            .expect("Failed to read to buffer");
+                        response
+                            .status(StatusCode::OK)
+                            .body(Full::new(Bytes::copy_from_slice(&buf)))
+                    }
                     fs if fs.starts_with("/frontend/") => {
                         let mut buf = vec![];
                         let mut page = File::open(&fs[1..]).expect("Failed to find file");
