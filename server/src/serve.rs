@@ -7,6 +7,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::control::{Controller, ControllerId, ControllerMessage};
 
+pub mod registry;
 pub mod service;
 
 /// How many heartbeat checks before a controller should be dropped

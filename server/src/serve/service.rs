@@ -11,7 +11,7 @@ use hyper::{
 use hyper_tungstenite::is_upgrade_request;
 use tokio::sync::mpsc::Sender;
 
-use crate::control::Controller;
+use crate::{control::Controller, serve::registry::GAMES};
 
 /// Service implementation responsible for handling routes and updating new controller connections
 pub struct SpjortService {
@@ -59,6 +59,13 @@ impl Service<Request<body::Incoming>> for SpjortService {
                             .status(StatusCode::OK)
                             .body(Full::new(Bytes::copy_from_slice(&buf)))
                     }
+                    "/games" => {
+                        let games = serde_json::to_string(GAMES).expect("Serialize game registry");
+                        response
+                            .header("content-type", "application/json")
+                            .status(StatusCode::OK)
+                            .body(Full::new(Bytes::copy_from_slice(games.as_bytes())))
+                    }
                     "/favicon.ico" => {
                         let mut buf = vec![];
                         let mut page =
@@ -69,7 +76,7 @@ impl Service<Request<body::Incoming>> for SpjortService {
                             .status(StatusCode::OK)
                             .body(Full::new(Bytes::copy_from_slice(&buf)))
                     }
-                    fs if fs.starts_with("/frontend/") => {
+                    fs if fs.starts_with("/frontend/") || fs.starts_with("/wasm") => {
                         let mut buf = vec![];
                         let mut page = File::open(&fs[1..]).expect("Failed to find file");
                         page.read_to_end(&mut buf)
