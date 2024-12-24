@@ -60,7 +60,11 @@ impl Service<Request<body::Incoming>> for SpjortService {
                             .body(Full::new(Bytes::copy_from_slice(&buf)))
                     }
                     "/games" => {
-                        let games = serde_json::to_string(GAMES).expect("Serialize game registry");
+                        let games = GAMES
+                            .iter()
+                            .map(|game| game.render_html())
+                            .collect::<Vec<_>>()
+                            .join(" ");
                         response
                             .header("content-type", "application/json")
                             .status(StatusCode::OK)

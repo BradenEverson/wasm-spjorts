@@ -68,3 +68,41 @@ body {
     transform: scale(1);
 }
 
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 6rem;
+    margin-top: 4rem;
+    width: 80%;
+    padding: 1rem;
+    justify-items: center;
+}
+
+.game-box {
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    width: 200px;
+    text-align: center;
+}
+
+.game-box:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+}
+
+.game-thumbnail {
+    width: 100%;
+    height: auto;
+}
+
+.game-name {
+    font-size: 1.2rem;
+    color: #fff;
+    padding: 0.5rem 0;
+    background: linear-gradient(90deg, #00aaff, #007acc);
+}
+

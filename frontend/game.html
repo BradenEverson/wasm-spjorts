@@ -1,5 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="frontend/style/index.css"/>
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTg6dMp+" crossorigin="anonymous"></script>
+    <title>Game Modes</title>
+</head>
 <body>
     <div class="container">
-        <div class="title"><b class="white">Game Modes</div>
+        <div class="title"><b class="white">Game Modes</b></div>
+        <div class="games-grid" hx-get="/games" hx-trigger="load" hx-target="this" hx-swap="innerHTML">
+            <!-- Games will load here dynamically -->
+        </div>
     </div>
 </body>
+</html>
+

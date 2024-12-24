@@ -13,6 +13,21 @@ pub struct Game {
     pub name: &'static str,
 }
 
+impl Game {
+    /// Creates valid renderable HTML for a Game element
+    pub fn render_html(&self) -> String {
+        format!(
+            r#"
+            <div class="game-box" onclick="window.location.href='{}'">
+                <img src="{}" alt="{}" class="game-thumbnail" />
+                <div class="game-name">{}</div>
+            </div>
+            "#,
+            self.name, self.img, self.name, self.name
+        )
+    }
+}
+
 macro_rules! game {
     ($wasm:expr_2021, $img:expr_2021, $descr:expr_2021) => {
         Game {
