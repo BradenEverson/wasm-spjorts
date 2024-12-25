@@ -31,66 +31,69 @@ impl Game {
     pub fn render_game_scene(&self) -> String {
         format!(
             r#"
-            <head>
-                <meta charset="UTF-8" />
-                <link rel="stylesheet" href="frontend/style/game.css">
-            </head>
-            <body>
-                <title>{}</title>
-                <div class="loader"></div>
-                <script>
-                    (function () {{
-                        const audioContextList = [];
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <meta charset="UTF-8" />
+                    <link rel="stylesheet" href="frontend/style/game.css">
+                </head>
+                <body>
+                    <title>{}</title>
+                    <div class="loader"></div>
+                    <script>
+                        (function () {{
+                            const audioContextList = [];
 
-                        const userInputEventNames = [
-                            "click",
-                            "contextmenu",
-                            "auxclick",
-                            "dblclick",
-                            "mousedown",
-                            "mouseup",
-                            "pointerup",
-                            "touchend",
-                            "keydown",
-                            "keyup",
-                        ];
+                            const userInputEventNames = [
+                                "click",
+                                "contextmenu",
+                                "auxclick",
+                                "dblclick",
+                                "mousedown",
+                                "mouseup",
+                                "pointerup",
+                                "touchend",
+                                "keydown",
+                                "keyup",
+                            ];
 
-                        self.AudioContext = new Proxy(self.AudioContext, {{
-                            construct(target, args) {{
-                                const result = new target(...args);
-                                audioContextList.push(result);
-                                return result;
-                            }},
-                        }});
-
-                        function resumeAllContexts(_event) {{
-                            let count = 0;
-
-                            audioContextList.forEach((context) => {{
-                                if (context.state !== "running") {{
-                                    context.resume();
-                                }} else {{
-                                    count++;
-                                }}
+                            self.AudioContext = new Proxy(self.AudioContext, {{
+                                construct(target, args) {{
+                                    const result = new target(...args);
+                                    audioContextList.push(result);
+                                    return result;
+                                }},
                             }});
 
-                            if (count > 0 && count === audioContextList.length) {{
-                                userInputEventNames.forEach((eventName) => {{
-                                    document.removeEventListener(eventName, resumeAllContexts);
-                                }});
-                            }}
-                        }}
+                            function resumeAllContexts(_event) {{
+                                let count = 0;
 
-                        userInputEventNames.forEach((eventName) => {{
-                            document.addEventListener(eventName, resumeAllContexts);
-                        }});
-                    }})();
-                </script>
-                <script type="module">
-                    import init from '{}'
-                    init();
-                </script>
-            </body>
+                                audioContextList.forEach((context) => {{
+                                    if (context.state !== "running") {{
+                                        context.resume();
+                                    }} else {{
+                                        count++;
+                                    }}
+                                }});
+
+                                if (count > 0 && count === audioContextList.length) {{
+                                    userInputEventNames.forEach((eventName) => {{
+                                        document.removeEventListener(eventName, resumeAllContexts);
+                                    }});
+                                }}
+                            }}
+
+                            userInputEventNames.forEach((eventName) => {{
+                                document.addEventListener(eventName, resumeAllContexts);
+                            }});
+                        }})();
+                    </script>
+                    <script type="module">
+                        import init from '{}'
+                        init();
+                    </script>
+                </body>
+            </html>
             "#,
             self.name, self.wasm_path
         )

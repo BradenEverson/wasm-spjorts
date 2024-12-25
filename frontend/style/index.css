@@ -17,6 +17,16 @@ body {
     text-align: center;
 }
 
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+
 .white {
     color: #ebf1ff
 }
