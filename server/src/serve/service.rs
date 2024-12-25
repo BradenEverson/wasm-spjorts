@@ -1,6 +1,6 @@
 //! Hyper service implementation
 
-use std::{fmt::format, fs::File, future::Future, io::Read, pin::Pin};
+use std::{fs::File, future::Future, io::Read, pin::Pin};
 
 use http_body_util::Full;
 use hyper::{
@@ -35,7 +35,7 @@ impl Service<Request<body::Incoming>> for SpjortService {
         if is_upgrade_request(&req) {
             todo!()
         } else {
-            let response = Response::builder();
+            let mut response = Response::builder();
 
             let res = match *req.method() {
                 Method::GET => match req.uri().path() {
@@ -85,6 +85,14 @@ impl Service<Request<body::Incoming>> for SpjortService {
                         let mut page = File::open(&fs[1..]).expect("Failed to find file");
                         page.read_to_end(&mut buf)
                             .expect("Failed to read to buffer");
+                        if fs.starts_with("/wasm") {
+                            if fs.ends_with("js") {
+                                response = response.header("content-type", "text/javascript");
+                            } else if fs.ends_with("wasm") {
+                                response = response.header("content-type", "application/wasm");
+                            }
+                        }
+
                         response
                             .status(StatusCode::OK)
                             .body(Full::new(Bytes::copy_from_slice(&buf)))

@@ -18,7 +18,7 @@ impl Game {
     pub fn render_html(&self) -> String {
         format!(
             r#"
-            <div class="game-box"  hx-get="sports/{}" hx-target="body"">
+            <div class="game-box"  hx-get="sports/{}" hx-target="body">
                 <img src="{}" alt="{}" class="game-thumbnail" />
                 <div class="game-name">{}</div>
             </div>
