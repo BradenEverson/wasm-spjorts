@@ -3,10 +3,6 @@
 use bevy::prelude::*;
 use crossbeam_channel::{Receiver, Sender};
 use wasm_bindgen::prelude::wasm_bindgen;
-use web_sys::console;
-
-#[derive(Component)]
-pub struct Cube;
 
 /// An app instance with internal JS communications
 #[wasm_bindgen]
@@ -63,17 +59,15 @@ fn setup(
     mut meshes: ResMut<'_, Assets<Mesh>>,
     mut materials: ResMut<'_, Assets<StandardMaterial>>,
 ) {
-    let entity_spawn = Vec3::ZERO;
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::default())),
         MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::from_translation(entity_spawn),
-        Cube,
+        Transform::from_translation(Vec3::ZERO),
     ));
 
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0.0, 2.0, 10.0).looking_at(entity_spawn, Vec3::Y),
+        Transform::from_xyz(0.0, 2.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     commands.spawn((
@@ -83,9 +77,9 @@ fn setup(
 }
 
 /// Moves a cube with respect to position
-fn move_cube(mut cubes: Query<'_, '_, (&Cube, &mut Transform)>, read: Res<'_, ActionReader>) {
+fn move_cube(mut cubes: Query<'_, '_, (&Mesh3d, &mut Transform)>, read: Res<'_, ActionReader>) {
     if let Ok(val) = read.0.try_recv() {
-        for (_cube, mut transform) in &mut cubes {
+        for (_, mut transform) in &mut cubes {
             let prev = transform.translation;
             transform.translation += Vec3::new(val.0, val.1, val.2) - prev;
         }
