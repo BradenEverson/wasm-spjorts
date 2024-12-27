@@ -93,24 +93,22 @@ impl Game {
                         init().then(() => {{
                             let runner = new Runner();
                             let send = runner.get_send();
-                            setTimeout(() => {{
-                                let x = 0;
-                                let y = 0;
-                                let z = 0;
-                                document.addEventListener('keydown', function(event) {{
-                                    if (event.key === 'ArrowRight') {{
-                                        x += 0.1;
-                                    }} else if (event.key === 'ArrowLeft') {{
-                                        x -= 0.1;
-                                    }} else if (event.key  === 'ArrowUp') {{
-                                        y += 0.1;
-                                    }} else if (event.key === 'ArrowDown') {{
-                                        y -= 0.1;
-                                    }}
+                            let x = 0;
+                            let y = 0;
+                            let z = 0;
+                            document.addEventListener('keydown', function(event) {{
+                                if (event.key === 'ArrowRight') {{
+                                    x += 0.1;
+                                }} else if (event.key === 'ArrowLeft') {{
+                                    x -= 0.1;
+                                }} else if (event.key  === 'ArrowUp') {{
+                                    y += 0.1;
+                                }} else if (event.key === 'ArrowDown') {{
+                                    y -= 0.1;
+                                }}
 
-                                    send.send(x,y,z);
-                                }});
-                            }}, 2000);
+                                send.send(x,y,z);
+                            }});
                             console.log("Run has begun");
                             runner.run();
                         }});

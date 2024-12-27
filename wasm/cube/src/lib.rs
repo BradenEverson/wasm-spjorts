@@ -1,31 +1,16 @@
 //! A basic cube WASM app
 
 use bevy::prelude::*;
-use crossbeam_channel::{Receiver, Sender};
+use crossbeam_channel::Sender;
+use spjorts_core::{ActionReader, ActionSender, Communication};
 use wasm_bindgen::prelude::wasm_bindgen;
 
-/// An app instance with internal JS communications
+/// An app instance with internal JavaScript communications
 #[wasm_bindgen]
 pub struct Runner {
     app: App,
-    write: Sender<(f32, f32, f32)>,
+    write: Sender<Communication>,
 }
-
-/// A JS event sender pipeline
-#[wasm_bindgen]
-pub struct ActionSender(Sender<(f32, f32, f32)>);
-
-#[wasm_bindgen]
-impl ActionSender {
-    /// Sends x, y and z positional data to the game state
-    pub fn send(&mut self, x: f32, y: f32, z: f32) {
-        self.0.send((x, y, z)).expect("Send message");
-    }
-}
-
-/// A JS event reader pipeline
-#[derive(Resource)]
-pub struct ActionReader(Receiver<(f32, f32, f32)>);
 
 #[wasm_bindgen]
 impl Runner {
@@ -44,7 +29,7 @@ impl Runner {
 
     /// Gets the runner's send channel
     pub fn get_send(&self) -> ActionSender {
-        ActionSender(self.write.clone())
+        ActionSender::new(self.write.clone())
     }
 
     /// Runs the app as a blocking task

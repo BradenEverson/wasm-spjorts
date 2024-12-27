@@ -1,0 +1,15 @@
+[package]
+name = "spjorts-core"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+wasm-bindgen = "0.2.99"
+crossbeam-channel = "0.5.14"
+bevy = "0.15.0"
+
+[lib]
+
+[lints]
+workspace = true
