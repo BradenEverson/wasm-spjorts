@@ -1,5 +1,5 @@
 [workspace]
-members = ["server", "wasm/bowling", "wasm/cube", "wasm/spjorts-core"]
+members = ["server", "wasm/bowling", "wasm/cube", "wasm/spjorts-core", "websocket-listen-tester", "websocket-tester"]
 resolver = "2"
 
 [workspace.package]

@@ -1,6 +1,7 @@
 //! Controller message protocol
 
-use deku::{DekuRead, DekuWrite};
+use deku::{DekuContainerWrite, DekuError, DekuRead, DekuWrite};
+use tokio_tungstenite::tungstenite::Message;
 
 /// Messages a controller can send through
 #[derive(DekuRead, DekuWrite, Debug, Clone, Copy, PartialEq)]
@@ -30,4 +31,20 @@ pub enum WsMessage {
     /// Establish connection as a controller with the provided ID
     #[deku(id = 0x02)]
     Controller(u64),
+}
+
+impl ControllerMessage {
+    /// Converts message to binary and then to a tokio tungstenite Message type
+    pub fn to_ws_message(&self) -> Result<Message, DekuError> {
+        let bytes = self.to_bytes()?;
+        Ok(Message::Binary(bytes))
+    }
+}
+
+impl WsMessage {
+    /// Converts message to binary and then to a tokio tungstenite Message type
+    pub fn to_ws_message(&self) -> Result<Message, DekuError> {
+        let bytes = self.to_bytes()?;
+        Ok(Message::Binary(bytes))
+    }
 }
