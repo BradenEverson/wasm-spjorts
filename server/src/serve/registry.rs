@@ -129,8 +129,15 @@ macro_rules! game {
 }
 
 /// All registered games
-pub const GAMES: &'static [Game] = &[game!(
-    "/wasm/cube/out/cube.js",
-    "/frontend/bg/cube.png",
-    "THE_CUBE"
-)];
+pub const GAMES: &'static [Game] = &[
+    game!(
+        "/wasm/cube/out/cube.js",
+        "/frontend/bg/cube.png",
+        "THE_CUBE"
+    ),
+    game!(
+        "/wasm/bowling/out/bowling.js",
+        "/frontend/bg/bowling.jpg",
+        "Bowling"
+    ),
+];

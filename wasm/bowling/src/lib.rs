@@ -1,4 +1,4 @@
-//! A basic cube WASM app
+//! Bowling game!
 
 use bevy::prelude::*;
 use crossbeam_channel::Sender;
@@ -21,8 +21,7 @@ impl Runner {
         let mut app = App::new();
         app.add_plugins(DefaultPlugins)
             .insert_resource(ActionReader(read))
-            .add_systems(Startup, setup)
-            .add_systems(Update, move_cube);
+            .add_systems(Startup, setup);
 
         Runner { app, write }
     }
@@ -38,18 +37,12 @@ impl Runner {
     }
 }
 
-/// System that spawns the cube, lighting and camera view
+/// System that spawns lighting and camera view
 fn setup(
     mut commands: Commands<'_, '_>,
     mut meshes: ResMut<'_, Assets<Mesh>>,
     mut materials: ResMut<'_, Assets<StandardMaterial>>,
 ) {
-    commands.spawn((
-        Mesh3d(meshes.add(Cuboid::default())),
-        MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::from_translation(Vec3::ZERO),
-    ));
-
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(0.0, 2.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -59,23 +52,4 @@ fn setup(
         DirectionalLight::default(),
         Transform::from_xyz(3.0, 3.0, 3.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
-}
-
-/// Moves a cube with respect to position
-fn move_cube(mut cubes: Query<'_, '_, (&Mesh3d, &mut Transform)>, read: Res<'_, ActionReader>) {
-    if let Ok(msg) = read.0.try_recv() {
-        for (_, mut transform) in &mut cubes {
-            match msg {
-                JsMessage::ButtonA => {
-                    transform.translation += Vec3::new(1f32, 0f32, 0f32);
-                }
-                JsMessage::ButtonB => {
-                    transform.translation += Vec3::new(-1f32, 0f32, 0f32);
-                }
-                JsMessage::Rotate(pitch, roll, yaw) => {
-                    transform.rotate(Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw));
-                }
-            }
-        }
-    }
 }

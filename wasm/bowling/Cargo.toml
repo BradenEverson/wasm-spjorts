@@ -1,0 +1,20 @@
+[package]
+name = "bowling"
+edition = "2021"
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+bevy = "0.15.0"
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
+crossbeam-channel = "0.5.14"
+wasm-bindgen = "0.2.99"
+web-sys = { version = "0.3.76", features = ["console"] }
+spjorts-core = {path = "../spjorts-core"}
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+
+[lints]
+workspace = true
