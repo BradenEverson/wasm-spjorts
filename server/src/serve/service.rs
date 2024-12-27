@@ -2,6 +2,7 @@
 
 use std::{fs::File, future::Future, io::Read, pin::Pin};
 
+use deku::DekuContainerRead;
 use futures::StreamExt;
 use http_body_util::Full;
 use hyper::{
@@ -11,8 +12,15 @@ use hyper::{
 };
 use hyper_tungstenite::is_upgrade_request;
 use tokio::sync::mpsc::Sender;
+use tokio_tungstenite::tungstenite::Message;
 
-use crate::{control::Controller, serve::registry::GAMES};
+use crate::{
+    control::{
+        msg::{ControllerMessage, WsMessage},
+        Controller,
+    },
+    serve::{registry::GAMES, WsConnectionType},
+};
 
 /// Service implementation responsible for handling routes and updating new controller connections
 pub struct SpjortService {
@@ -27,6 +35,29 @@ impl SpjortService {
     }
 }
 
+fn handle_ws_binary(buf: &[u8], controller_type: &mut WsConnectionType) {
+    match controller_type {
+        WsConnectionType::Controller(id) => {
+            let (_, val) = ControllerMessage::from_bytes((buf, 0)).unwrap();
+            println!("{val:?}");
+        }
+        WsConnectionType::None => {
+            let (_, val) = WsMessage::from_bytes((buf, 0)).unwrap();
+            match val {
+                WsMessage::Controller(id) => {
+                    *controller_type = WsConnectionType::Controller(id);
+                }
+                WsMessage::Establish(id) => {
+                    *controller_type = WsConnectionType::Listener(id);
+                }
+            }
+        }
+        WsConnectionType::Listener(_) => {
+            unreachable!("Listeners should only listen")
+        }
+    }
+}
+
 impl Service<Request<body::Incoming>> for SpjortService {
     type Response = Response<Full<Bytes>>;
     type Error = hyper::http::Error;
@@ -37,10 +68,14 @@ impl Service<Request<body::Incoming>> for SpjortService {
             let (response, websocket) =
                 hyper_tungstenite::upgrade(&mut req, None).expect("Upgrade to WebSocket");
 
+            let mut controller_type = WsConnectionType::None;
             tokio::spawn(async move {
                 let mut ws = websocket.await.expect("Await websocket");
-                while let Some(msg) = ws.next().await {
-                    println!("{msg:?}")
+                while let Some(Ok(msg)) = ws.next().await {
+                    match msg {
+                        Message::Binary(buf) => handle_ws_binary(&buf, &mut controller_type),
+                        _ => {}
+                    }
                 }
             });
 

@@ -83,3 +83,13 @@ impl SpjortState {
         });
     }
 }
+
+/// Type of websocket connection
+pub enum WsConnectionType {
+    /// Controller with an ID
+    Controller(u64),
+    /// Listener listening to a controller with ID
+    Listener(u64),
+    /// Nothing yet
+    None,
+}
