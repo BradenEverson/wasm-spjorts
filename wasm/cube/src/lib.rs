@@ -2,8 +2,9 @@
 
 use bevy::prelude::*;
 use crossbeam_channel::Sender;
-use spjorts_core::{ActionReader, ActionSender, Communication};
+use spjorts_core::{communication::JsMessage, ActionReader, ActionSender, Communication};
 use wasm_bindgen::prelude::wasm_bindgen;
+use web_sys::console;
 
 /// An app instance with internal JavaScript communications
 #[wasm_bindgen]
@@ -63,10 +64,19 @@ fn setup(
 
 /// Moves a cube with respect to position
 fn move_cube(mut cubes: Query<'_, '_, (&Mesh3d, &mut Transform)>, read: Res<'_, ActionReader>) {
-    if let Ok(val) = read.0.try_recv() {
+    if let Ok(msg) = read.0.try_recv() {
         for (_, mut transform) in &mut cubes {
-            let prev = transform.translation;
-            transform.translation += Vec3::new(val.0, val.1, val.2) - prev;
+            match msg {
+                JsMessage::ButtonA => {
+                    transform.translation += Vec3::new(1f32, 0f32, 0f32);
+                }
+                JsMessage::ButtonB => {
+                    transform.translation += Vec3::new(-1f32, 0f32, 0f32);
+                }
+                JsMessage::Rotate(pitch, roll, yaw) => {
+                    transform.rotate(Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw));
+                }
+            }
         }
     }
 }

@@ -98,16 +98,12 @@ impl Game {
                             let z = 0;
                             document.addEventListener('keydown', function(event) {{
                                 if (event.key === 'ArrowRight') {{
-                                    x += 0.1;
+                                    send.press_a();
                                 }} else if (event.key === 'ArrowLeft') {{
-                                    x -= 0.1;
-                                }} else if (event.key  === 'ArrowUp') {{
-                                    y += 0.1;
-                                }} else if (event.key === 'ArrowDown') {{
-                                    y -= 0.1;
+                                    send.press_b();
+                                }} else if (event.key === 'r') {{
+                                    send.rotate(Math.PI / 16, Math.PI / 16, Math.PI / 16);
                                 }}
-
-                                send.send(x,y,z);
                             }});
                             console.log("Run has begun");
                             runner.run();

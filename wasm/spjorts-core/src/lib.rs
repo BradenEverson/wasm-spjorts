@@ -1,11 +1,14 @@
 //! Shared struct and utilities for all WASM games
 
 use bevy::prelude::Resource;
+use communication::JsMessage;
 use crossbeam_channel::{Receiver, Sender};
 use wasm_bindgen::prelude::wasm_bindgen;
 
+pub mod communication;
+
 /// What is JavaScript sending back and forth
-pub type Communication = (f32, f32, f32);
+pub type Communication = JsMessage;
 
 /// A JavaScript event sender pipeline
 #[wasm_bindgen]
@@ -20,12 +23,24 @@ impl ActionSender {
 
 #[wasm_bindgen]
 impl ActionSender {
-    /// Sends x, y and z positional data to the game state
-    pub fn send(&mut self, x: f32, y: f32, z: f32) {
-        self.0.send((x, y, z)).expect("Send message");
+    /// Press the A button
+    pub fn press_a(&mut self) {
+        self.0.send(JsMessage::ButtonA).expect("Press A Button")
+    }
+
+    /// Press the B button
+    pub fn press_b(&mut self) {
+        self.0.send(JsMessage::ButtonB).expect("Press B Button")
+    }
+
+    /// Rotate data with pitch, roll and yaw
+    pub fn rotate(&mut self, pitch: f32, roll: f32, yaw: f32) {
+        self.0
+            .send(JsMessage::Rotate(pitch, roll, yaw))
+            .expect("Rotate")
     }
 }
 
 /// A JavaScript event reader pipeline
 #[derive(Resource)]
-pub struct ActionReader(pub Receiver<(f32, f32, f32)>);
+pub struct ActionReader(pub Receiver<Communication>);
