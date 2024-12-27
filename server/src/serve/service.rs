@@ -2,6 +2,7 @@
 
 use std::{fs::File, future::Future, io::Read, pin::Pin};
 
+use futures::StreamExt;
 use http_body_util::Full;
 use hyper::{
     body::{self, Bytes},
@@ -31,9 +32,19 @@ impl Service<Request<body::Incoming>> for SpjortService {
     type Error = hyper::http::Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
-    fn call(&self, req: Request<body::Incoming>) -> Self::Future {
+    fn call(&self, mut req: Request<body::Incoming>) -> Self::Future {
         if is_upgrade_request(&req) {
-            todo!()
+            let (response, websocket) =
+                hyper_tungstenite::upgrade(&mut req, None).expect("Upgrade to WebSocket");
+
+            tokio::spawn(async move {
+                let mut ws = websocket.await.expect("Await websocket");
+                while let Some(msg) = ws.next().await {
+                    println!("{msg:?}")
+                }
+            });
+
+            Box::pin(async { Ok(response) })
         } else {
             let mut response = Response::builder();
 
