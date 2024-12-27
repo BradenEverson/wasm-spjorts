@@ -1,54 +1,79 @@
 //! Hyper service implementation
 
-use std::{fs::File, future::Future, io::Read, pin::Pin};
+use std::{fs::File, future::Future, io::Read, pin::Pin, sync::Arc};
 
 use deku::DekuContainerRead;
-use futures::StreamExt;
+use futures::{stream::SplitSink, StreamExt};
 use http_body_util::Full;
 use hyper::{
     body::{self, Bytes},
     service::Service,
+    upgrade::Upgraded,
     Method, Request, Response, StatusCode,
 };
 use hyper_tungstenite::is_upgrade_request;
-use tokio::sync::mpsc::Sender;
-use tokio_tungstenite::tungstenite::Message;
+use hyper_util::rt::TokioIo;
+use tokio::sync::{mpsc::Sender, Mutex};
+use tokio_tungstenite::{tungstenite::Message, WebSocketStream};
 
 use crate::{
-    control::{
-        msg::{ControllerMessage, WsMessage},
-        Controller,
-    },
-    serve::{registry::GAMES, WsConnectionType},
+    control::{msg::WsMessage, Controller},
+    serve::{registry::GAMES, SpjortState, WsConnectionType},
 };
+
+/// Web socket write stream
+pub type WebsocketWriteStream = SplitSink<WebSocketStream<TokioIo<Upgraded>>, Message>;
 
 /// Service implementation responsible for handling routes and updating new controller connections
 pub struct SpjortService {
     /// Controller send channel for connecting devices
-    controller_sender: Sender<Controller>,
+    controller_sender: Sender<Arc<Mutex<Controller>>>,
+    /// The current state
+    state: Arc<Mutex<SpjortState>>,
 }
 
 impl SpjortService {
-    /// Creates a new spjortservice wrapping a controller sender
-    pub fn new(controller_sender: Sender<Controller>) -> Self {
-        Self { controller_sender }
+    /// Creates a new spjort service wrapping a controller sender
+    pub fn new(
+        controller_sender: Sender<Arc<Mutex<Controller>>>,
+        state: Arc<Mutex<SpjortState>>,
+    ) -> Self {
+        Self {
+            controller_sender,
+            state,
+        }
     }
 }
 
-fn handle_ws_binary(buf: &[u8], controller_type: &mut WsConnectionType) {
+async fn handle_ws_binary(
+    buf: &[u8],
+    controller_type: &mut WsConnectionType,
+    sender: Sender<Arc<Mutex<Controller>>>,
+    state: Arc<Mutex<SpjortState>>,
+    write_stream: Arc<Mutex<WebsocketWriteStream>>,
+) {
     match controller_type {
         WsConnectionType::Controller(id) => {
-            let (_, val) = ControllerMessage::from_bytes((buf, 0)).unwrap();
-            println!("{val:?}");
+            let controller = &state.lock().await.controllers[&id];
+            let mut controller = controller.lock().await;
+            controller.broadcast(buf).await;
         }
         WsConnectionType::None => {
             let (_, val) = WsMessage::from_bytes((buf, 0)).unwrap();
             match val {
                 WsMessage::Controller(id) => {
                     *controller_type = WsConnectionType::Controller(id);
+                    let new_controller = Arc::new(Mutex::new(Controller::new(id)));
+                    sender
+                        .send(new_controller)
+                        .await
+                        .expect("Send new controller");
                 }
                 WsMessage::Establish(id) => {
                     *controller_type = WsConnectionType::Listener(id);
+                    let controller = &state.lock().await.controllers[&id];
+                    let mut controller = controller.lock().await;
+                    controller.new_listener(write_stream);
                 }
             }
         }
@@ -69,11 +94,23 @@ impl Service<Request<body::Incoming>> for SpjortService {
                 hyper_tungstenite::upgrade(&mut req, None).expect("Upgrade to WebSocket");
 
             let mut controller_type = WsConnectionType::None;
+            let sender = self.controller_sender.clone();
+            let state = self.state.clone();
             tokio::spawn(async move {
-                let mut ws = websocket.await.expect("Await websocket");
-                while let Some(Ok(msg)) = ws.next().await {
+                let (ws_write, mut ws_read) = websocket.await.expect("Await websocket").split();
+                let ws_write = Arc::new(Mutex::new(ws_write));
+                while let Some(Ok(msg)) = ws_read.next().await {
                     match msg {
-                        Message::Binary(buf) => handle_ws_binary(&buf, &mut controller_type),
+                        Message::Binary(buf) => {
+                            handle_ws_binary(
+                                &buf,
+                                &mut controller_type,
+                                sender.clone(),
+                                state.clone(),
+                                ws_write.clone(),
+                            )
+                            .await
+                        }
                         _ => {}
                     }
                 }

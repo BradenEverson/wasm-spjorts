@@ -15,7 +15,7 @@ pub const CONTROLLER_QUEUE_LIMIT: usize = 15;
 
 #[tokio::main]
 async fn main() {
-    let (state, controller_write, mut controller_read, _info_sender) = SpjortState::new(15);
+    let (state, controller_write, mut controller_read) = SpjortState::new(15);
     let state = Arc::new(Mutex::new(state));
 
     let listener = TcpListener::bind("0.0.0.0:7878")
@@ -25,6 +25,7 @@ async fn main() {
     println!("🏂🎾⛳");
     println!("Listening on http://localhost:7878");
 
+    let state_clone_server = state.clone();
     tokio::spawn(async move {
         loop {
             let (socket, _) = listener
@@ -34,7 +35,7 @@ async fn main() {
 
             let io = TokioIo::new(socket);
 
-            let service = SpjortService::new(controller_write.clone());
+            let service = SpjortService::new(controller_write.clone(), state_clone_server.clone());
             tokio::spawn(async move {
                 if let Err(e) = http1::Builder::new()
                     .serve_connection(io, service)
@@ -51,13 +52,9 @@ async fn main() {
     let state_clone = state.clone();
     tokio::spawn(async move {
         while let Some(controller) = controller_read.recv().await {
-            state_clone.lock().await.connect(controller);
+            state_clone.lock().await.connect(controller).await;
         }
     });
-
-    // Controller message handler
-    let state_clone_message_handler = state.clone();
-    tokio::spawn(async move { state_clone_message_handler.lock().await.poll().await });
 
     // Dead controller disconnect loop :)
     loop {

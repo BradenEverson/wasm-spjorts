@@ -1,9 +1,11 @@
 //! Server State and Connection Handlers
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
-use slotmap::SlotMap;
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::{
+    mpsc::{Receiver, Sender},
+    Mutex,
+};
 
 use crate::control::{Controller, ControllerId, ControllerMessage};
 
@@ -18,10 +20,8 @@ pub type ControllerInfo = (ControllerId, ControllerMessage);
 
 /// A current state including all connections and updates from controllers
 pub struct SpjortState {
-    /// The read channels for new controller information coming through
-    controller_channels: Receiver<ControllerInfo>,
     /// All controllers that exist
-    controllers: SlotMap<ControllerId, Controller>,
+    controllers: HashMap<ControllerId, Arc<Mutex<Controller>>>,
     /// How long ago controllers have checked in to the server, they will be kicked if passing a
     /// tick threshold
     time_since_heartbeat: HashMap<ControllerId, usize>,
@@ -33,37 +33,25 @@ impl SpjortState {
         queue_limit: usize,
     ) -> (
         Self,
-        Sender<Controller>,
-        Receiver<Controller>,
-        Sender<ControllerInfo>,
+        Sender<Arc<Mutex<Controller>>>,
+        Receiver<Arc<Mutex<Controller>>>,
     ) {
         let (sender, receiver) = tokio::sync::mpsc::channel(queue_limit);
-        let (sender_controllers, receiver_controllers) = tokio::sync::mpsc::channel(queue_limit);
         (
             Self {
-                controller_channels: receiver_controllers,
-                controllers: SlotMap::default(),
+                controllers: HashMap::new(),
                 time_since_heartbeat: HashMap::new(),
             },
             sender,
             receiver,
-            sender_controllers,
         )
     }
 
-    /// Polls any new info from the read queue
-    pub async fn poll(&mut self) {
-        if let Some((id, msg)) = self.controller_channels.recv().await {
-            match msg {
-                _ => println!("Not yet implemeneted buddy boy, but here's the ID {id:?}"),
-            }
-        }
-    }
-
     /// Connects a new controller to the context
-    pub fn connect(&mut self, controller: Controller) {
-        let controller_id = self.controllers.insert(controller);
-        self.time_since_heartbeat.insert(controller_id, 0);
+    pub async fn connect(&mut self, controller: Arc<Mutex<Controller>>) {
+        let id = { controller.lock().await.id };
+        self.controllers.insert(id, controller);
+        self.time_since_heartbeat.insert(id, 0);
     }
 
     /// Checks all heart beats and removes any connections that are higher than the limit
@@ -78,7 +66,7 @@ impl SpjortState {
         });
 
         naughty.iter().for_each(|key| {
-            self.controllers.remove(*key);
+            self.controllers.remove(key);
             self.time_since_heartbeat.remove(key);
         });
     }
