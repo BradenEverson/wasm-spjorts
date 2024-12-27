@@ -25,9 +25,26 @@ async fn main() {
         )
         .await
         .unwrap();
-
     let mut rng = thread_rng();
     loop {
+        write
+            .send(
+                ControllerMessage::ButtonPressA
+                    .to_ws_message()
+                    .expect("Convert to ws message"),
+            )
+            .await
+            .unwrap();
+
+        write
+            .send(
+                ControllerMessage::ButtonPressB
+                    .to_ws_message()
+                    .expect("Convert to ws message"),
+            )
+            .await
+            .unwrap();
+
         let (pitch, yaw, roll) = (
             rng.gen_range(UNIT_CIRCLE_RANGE),
             rng.gen_range(UNIT_CIRCLE_RANGE),
