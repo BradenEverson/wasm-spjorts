@@ -3,7 +3,7 @@
 //! the site itself is *what* game the controller is currently in (there is no user data, all is
 //! linked and contained via controller). The game logic itself is handled in WASM on the frontend
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use hyper::server::conn::http1;
 use hyper_util::rt::TokioIo;
@@ -49,16 +49,14 @@ async fn main() {
     });
 
     // Connection handler thread
-    let state_clone = state.clone();
-    tokio::spawn(async move {
-        while let Some(controller) = controller_read.recv().await {
-            state_clone.lock().await.connect(controller).await;
-        }
-    });
+    while let Some(controller) = controller_read.recv().await {
+        state.lock().await.connect(controller).await;
+    }
 
+    // TODO Later if controller persistence is really an issue
     // Dead controller disconnect loop :)
-    loop {
+    /*loop {
         state.lock().await.heartbeat();
         std::thread::sleep(Duration::from_secs(30));
-    }
+    }*/
 }
