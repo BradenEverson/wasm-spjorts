@@ -3,17 +3,49 @@
 
 use std::{fs::File, io::Read};
 
+use rppal::gpio::{Gpio, Trigger};
+
+/// A Button's pin
+pub const BUTTON_A_PIN: u8 = 5;
+/// B Button's pin
+pub const BUTTON_B_PIN: u8 = 6;
+
 #[tokio::main]
 async fn main() {
     let id = read_id();
+
+    // Set up peripherals
+    let gpio = Gpio::new().expect("Initialize GPIO");
+    let mut button_a = gpio
+        .get(BUTTON_A_PIN)
+        .expect("Get GPIO pin for A button")
+        .into_input();
+
+    let mut button_b = gpio
+        .get(BUTTON_B_PIN)
+        .expect("Get GPIO pin for B button")
+        .into_input();
+
+    button_a
+        .set_async_interrupt(Trigger::RisingEdge, None, move |event| {
+            println!("Button A Event: {event:?}");
+        })
+        .expect("Set interupt");
+
+    button_b
+        .set_async_interrupt(Trigger::RisingEdge, None, move |event| {
+            println!("Button B Event: {event:?}");
+        })
+        .expect("Set interupt");
+
     // Connect to server
 }
 
 /// Gets the controller ID from the configuration files
 fn read_id() -> u64 {
-    let mut file = File::open("~/.id").expect("Failed to read identity file");
+    let mut file = File::open("/home/braden/.id").expect("Failed to read identity file");
     let mut buf = String::new();
     file.read_to_string(&mut buf).expect("Failed to read");
 
-    buf.parse().expect("ID File not in proper format")
+    buf.trim().parse().expect("ID File not in proper format")
 }
