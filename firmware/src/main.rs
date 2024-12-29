@@ -47,7 +47,7 @@ async fn main() {
     let channel_a = write_action.clone();
     button_a
         .set_async_interrupt(
-            Trigger::FallingEdge,
+            Trigger::RisingEdge,
             Some(Duration::from_millis(50)),
             move |_| {
                 channel_a
@@ -60,7 +60,7 @@ async fn main() {
     let channel_b = write_action.clone();
     button_b
         .set_async_interrupt(
-            Trigger::FallingEdge,
+            Trigger::RisingEdge,
             Some(Duration::from_millis(50)),
             move |_| {
                 channel_b
