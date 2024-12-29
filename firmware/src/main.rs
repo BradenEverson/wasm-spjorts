@@ -1,7 +1,7 @@
 //! Main firmware driver for a controller, reading rotational data and button press events from the
 //! Pi and transmitting this information to the game server over web sockets
 
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, time::Duration};
 
 use rppal::gpio::{Gpio, Trigger};
 
@@ -21,23 +21,31 @@ async fn main() {
     let mut button_a = gpio
         .get(BUTTON_A_PIN)
         .expect("Get GPIO pin for A button")
-        .into_input();
+        .into_input_pulldown();
 
     let mut button_b = gpio
         .get(BUTTON_B_PIN)
         .expect("Get GPIO pin for B button")
-        .into_input();
+        .into_input_pulldown();
 
     button_a
-        .set_async_interrupt(Trigger::FallingEdge, None, move |event| {
-            println!("Button A Event: {event:?}");
-        })
+        .set_async_interrupt(
+            Trigger::FallingEdge,
+            Some(Duration::from_millis(50)),
+            move |event| {
+                println!("Button A Event: {event:?}");
+            },
+        )
         .expect("Set interupt");
 
     button_b
-        .set_async_interrupt(Trigger::FallingEdge, None, move |event| {
-            println!("Button B Event: {event:?}");
-        })
+        .set_async_interrupt(
+            Trigger::FallingEdge,
+            Some(Duration::from_millis(50)),
+            move |event| {
+                println!("Button B Event: {event:?}");
+            },
+        )
         .expect("Set interupt");
 
     // Read gyroscope information and send it over to websocket
