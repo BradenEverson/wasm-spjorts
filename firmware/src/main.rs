@@ -14,6 +14,8 @@ pub const BUTTON_B_PIN: u8 = 6;
 async fn main() {
     let id = read_id();
 
+    // Connect to server
+
     // Set up peripherals
     let gpio = Gpio::new().expect("Initialize GPIO");
     let mut button_a = gpio
@@ -38,7 +40,8 @@ async fn main() {
         })
         .expect("Set interupt");
 
-    // Connect to server
+    // Read gyroscope information and send it over to websocket
+    loop {}
 }
 
 /// Gets the controller ID from the configuration files
