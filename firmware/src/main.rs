@@ -29,13 +29,13 @@ async fn main() {
         .into_input();
 
     button_a
-        .set_async_interrupt(Trigger::RisingEdge, None, move |event| {
+        .set_async_interrupt(Trigger::FallingEdge, None, move |event| {
             println!("Button A Event: {event:?}");
         })
         .expect("Set interupt");
 
     button_b
-        .set_async_interrupt(Trigger::RisingEdge, None, move |event| {
+        .set_async_interrupt(Trigger::FallingEdge, None, move |event| {
             println!("Button B Event: {event:?}");
         })
         .expect("Set interupt");
