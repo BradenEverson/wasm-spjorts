@@ -72,39 +72,10 @@ async fn main() {
 
     // Read gyroscope information and send it over to web socket
     while let Ok(msg) = read_action.recv() {
-        match msg {
-            ControllerMessage::ButtonPressA => {
-                write
-                    .send(
-                        ControllerMessage::ButtonPressA
-                            .to_ws_message()
-                            .expect("Convert to ws message"),
-                    )
-                    .await
-                    .unwrap();
-            }
-            ControllerMessage::ButtonPressB => {
-                write
-                    .send(
-                        ControllerMessage::ButtonPressB
-                            .to_ws_message()
-                            .expect("Convert to ws message"),
-                    )
-                    .await
-                    .unwrap();
-            }
-            ControllerMessage::AngleInfo(pitch, roll, yaw) => {
-                write
-                    .send(
-                        ControllerMessage::AngleInfo(pitch, yaw, roll)
-                            .to_ws_message()
-                            .unwrap(),
-                    )
-                    .await
-                    .unwrap();
-            }
-            _ => {}
-        }
+        write
+            .send(msg.to_ws_message().expect("Convert to ws message"))
+            .await
+            .unwrap();
     }
 }
 
