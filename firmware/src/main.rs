@@ -90,7 +90,7 @@ async fn main() {
         .expect("Set MPU6050 address");
 
     // Wake up MPU6050
-    i2c.write(&[PWR_MGMT_1, 0x00]).expect("Write to MPU6050");
+    i2c.smbus_write_byte(PWR_MGMT_1, 0x00).expect("Wake up");
 
     // Read gyroscope information and send it over to WebSocket
     let dt = ANGLE_WAIT_TIME as f32 / 1000.0;
@@ -115,7 +115,7 @@ async fn main() {
 /// Reads raw data from MPU6050 and calculates pitch, yaw, and roll
 fn read_mpu6050(i2c: &mut I2c, dt: f32) -> Option<(f32, f32, f32)> {
     let mut buf = [0; 14];
-    i2c.write_read(&[ACCEL_XOUT_H], &mut buf)
+    i2c.block_read(ACCEL_XOUT_H, &mut buf)
         .expect("Read MPU6050");
 
     let ax = ((buf[0] as i16) << 8 | buf[1] as i16) as f32;
