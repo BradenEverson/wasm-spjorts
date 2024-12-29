@@ -85,7 +85,7 @@ async fn main() {
         .expect("Set interupt");
 
     // Initialize MPU6050
-    let mut i2c = I2c::new().expect("Initialize I2C");
+    let mut i2c = I2c::with_bus(1).expect("Initialize I2C");
     i2c.set_slave_address(MPU6050_ADDR)
         .expect("Set MPU6050 address");
 
