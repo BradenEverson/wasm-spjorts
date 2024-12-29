@@ -95,6 +95,14 @@ impl Game {
                         const socket = new WebSocket("/");
                         socket.binaryType = "arraybuffer";
 
+                        socket.addEventListener("open", () => {{
+                            console.log("WebSocket connection opened");
+                            const buffer = createWsMessage(1, 1);
+
+                            socket.send(buffer);
+                            console.log("ArrayBuffer sent:", buffer);
+                        }});
+
                         function createWsMessage(id, payload) {{
                             const buffer = new ArrayBuffer(9);
                             const dataView = new DataView(buffer);
@@ -110,13 +118,6 @@ impl Game {
                         init().then(() => {{
                             let runner = new Runner();
                             let send = runner.get_send();
-                            socket.addEventListener("open", () => {{
-                                console.log("WebSocket connection opened");
-                                const buffer = createWsMessage(1, 1);
-
-                                socket.send(buffer);
-                                console.log("ArrayBuffer sent:", buffer);
-                            }});
 
                             socket.addEventListener("message", (event) => {{
                                 const buffer = event.data;
