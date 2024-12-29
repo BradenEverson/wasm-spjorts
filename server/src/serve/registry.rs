@@ -88,23 +88,71 @@ impl Game {
                             }});
                         }})();
                     </script>
+
                     <script type="module">
                         import init, {{ Runner }} from '{}'
+
+                        const socket = new WebSocket("/");
+                        socket.binaryType = "arraybuffer";
+
+                        function createWsMessage(id, payload) {{
+                            const buffer = new ArrayBuffer(9);
+                            const dataView = new DataView(buffer);
+
+                            dataView.setUint8(0, id);
+
+                            const bigIntPayload = BigInt(payload);
+                            dataView.setBigUint64(1, bigIntPayload, true); 
+
+                            return buffer;
+                        }}
+
                         init().then(() => {{
                             let runner = new Runner();
                             let send = runner.get_send();
-                            let x = 0;
-                            let y = 0;
-                            let z = 0;
-                            document.addEventListener('keydown', function(event) {{
-                                if (event.key === 'ArrowRight') {{
-                                    send.press_a();
-                                }} else if (event.key === 'ArrowLeft') {{
-                                    send.press_b();
-                                }} else if (event.key === 'r') {{
-                                    send.rotate(Math.PI / 16, Math.PI / 16, Math.PI / 16);
-                                }}
+                            socket.addEventListener("open", () => {{
+                                console.log("WebSocket connection opened");
+                                const buffer = createWsMessage(1, 1);
+
+                                socket.send(buffer);
+                                console.log("ArrayBuffer sent:", buffer);
                             }});
+
+                            socket.addEventListener("message", (event) => {{
+                                const buffer = event.data;
+                                const dataView = new DataView(buffer);
+                                const id = dataView.getUint8(0);
+
+                                switch (id) {{
+                                    case 2:
+                                        // Button A
+                                        send.press_a();
+                                        break;
+                                    case 3:
+                                        // Button B
+                                        send.press_b();
+                                        break;
+                                    case 4:
+                                        // Angle data
+                                        const pitch = dataView.getFloat32(1, true);
+                                        const yaw = dataView.getFloat32(5, true);
+                                        const roll = dataView.getFloat32(9, true);
+                                        send.rotate(pitch, yaw, roll);
+                                        break;
+                                    default:
+                                        console.log("Unknown ID found: ", id);
+                                }}
+
+                            }});
+
+                            socket.addEventListener("error", (error) => {{
+                                console.error("WebSocket error:", error);
+                            }});
+
+                            socket.addEventListener("close", () => {{
+                                console.log("WebSocket connection closed");
+                            }});
+                            
                             console.log("Run has begun");
                             runner.run();
                         }});
