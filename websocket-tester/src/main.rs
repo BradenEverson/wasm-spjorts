@@ -47,7 +47,7 @@ async fn main() {
             .await
             .unwrap();
 
-        std::thread::sleep(Duration::from_millis(5000));
+        std::thread::sleep(Duration::from_millis(15000));
 
         write
             .send(
