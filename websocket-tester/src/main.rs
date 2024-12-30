@@ -27,29 +27,7 @@ async fn main() {
         .unwrap();
     let mut rng = thread_rng();
     loop {
-        write
-            .send(
-                ControllerMessage::ButtonPressA
-                    .to_ws_message()
-                    .expect("Convert to ws message"),
-            )
-            .await
-            .unwrap();
-
-        write
-            .send(
-                ControllerMessage::ButtonPressB
-                    .to_ws_message()
-                    .expect("Convert to ws message"),
-            )
-            .await
-            .unwrap();
-
-        let (pitch, yaw, roll) = (
-            rng.gen_range(UNIT_CIRCLE_RANGE),
-            rng.gen_range(UNIT_CIRCLE_RANGE),
-            rng.gen_range(UNIT_CIRCLE_RANGE),
-        );
+        let (pitch, yaw, roll) = (PI, 0., 0.);
 
         write
             .send(
@@ -60,6 +38,26 @@ async fn main() {
             .await
             .unwrap();
 
-        std::thread::sleep(Duration::from_millis(500));
+        write
+            .send(
+                ControllerMessage::ButtonPressA
+                    .to_ws_message()
+                    .expect("Convert to ws message"),
+            )
+            .await
+            .unwrap();
+
+        std::thread::sleep(Duration::from_millis(5000));
+
+        write
+            .send(
+                ControllerMessage::ButtonPressB
+                    .to_ws_message()
+                    .expect("Convert to ws message"),
+            )
+            .await
+            .unwrap();
+
+        std::thread::sleep(Duration::from_millis(1000));
     }
 }
