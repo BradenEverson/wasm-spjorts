@@ -34,11 +34,6 @@ pub struct Ball {
     pub released: bool,
     /// Current velocity
     pub velocity: Vec3,
-}
-
-/// Arm information on previous rotation info and current angular velocity
-#[derive(Component, Default)]
-pub struct BowlingArm {
     /// Current rotation
     pub curr_rotation: Quat,
     /// "Speed" that angles are changing
@@ -56,6 +51,11 @@ impl Pin {
     /// Initializes a Pin with initial coordinates
     pub fn new(initial_coords: Transform) -> Self {
         Self { initial_coords }
+    }
+    /// Resets a transform and rotation and velocity according to an initial pin position
+    pub fn reset(&self, transform: &mut Transform, velocity: &mut Velocity) {
+        *transform = self.initial_coords;
+        *velocity = Velocity::zero();
     }
 }
 
@@ -113,7 +113,6 @@ pub fn setup(
         MeshMaterial3d(materials.add(Color::hsl(33.0, 0.90, 0.61))),
         Transform::from_xyz(0.0, 0.3, BALL_START_Z).looking_at(Vec3::ZERO, Vec3::Y),
         Ball::default(),
-        BowlingArm::default(),
         Name::new("Ball"),
         RigidBody::KinematicPositionBased,
         Collider::ball(0.3),
