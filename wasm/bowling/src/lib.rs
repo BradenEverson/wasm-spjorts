@@ -84,7 +84,7 @@ fn handle_input(
                         ball.released = true;
                         *rigid = RigidBody::Dynamic;
 
-                        let forward = transform.local_z() * -1.0;
+                        let forward = transform.local_z();
                         ball.velocity = forward.normalize() * BALL_SPEED;
                         *velocity = Velocity::linear(ball.velocity);
                     }
