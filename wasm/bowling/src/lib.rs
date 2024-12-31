@@ -11,6 +11,7 @@ use spjorts_core::{communication::JsMessage, ActionReader, ActionSender, Communi
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub mod setup;
+pub mod turns;
 
 /// System responsible for running and communicating with a Bevy app
 #[wasm_bindgen]
