@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     prelude::{RigidBody, Velocity},
+    render::RapierDebugRenderPlugin,
 };
 use crossbeam_channel::Sender;
 use setup::{setup, Ball, BowlingArm, Pin, BALL_SPEED, BALL_START_Z};
@@ -30,6 +31,7 @@ impl Runner {
         let mut app = App::new();
         app.add_plugins(DefaultPlugins)
             .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+            .add_plugins(RapierDebugRenderPlugin::default())
             .insert_resource(ActionReader(read))
             .add_systems(Startup, setup)
             .add_systems(Update, handle_input);
