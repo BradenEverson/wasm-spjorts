@@ -103,7 +103,10 @@ fn handle_input(
                 JsMessage::Rotate(pitch, roll, yaw) => {
                     if !ball.released {
                         // todo!("Based on previous rotation and velocity, calculate new speed of ball and set new rotation");
-                        transform.rotate(Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw));
+                        let prev = arm.curr_rotation;
+                        let new = Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw);
+                        transform.rotate(Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw) - prev);
+                        arm.curr_rotation = new;
                     }
                 }
             }

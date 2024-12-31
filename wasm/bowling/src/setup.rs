@@ -40,7 +40,7 @@ pub struct Ball {
 #[derive(Component, Default)]
 pub struct BowlingArm {
     /// Current rotation
-    pub curr_rotation: (f32, f32, f32),
+    pub curr_rotation: Quat,
     /// "Speed" that angles are changing
     pub angular_velocity: Vec3,
 }
