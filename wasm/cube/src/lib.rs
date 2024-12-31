@@ -84,10 +84,9 @@ fn move_cube(
                     transform.translation += Vec3::new(-1f32, 0f32, 0f32);
                 }
                 JsMessage::Rotate(pitch, roll, yaw) => {
-                    transform.rotate(
-                        Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw) - cube_info.prev_rot,
-                    );
-                    cube_info.prev_rot = Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw);
+                    let new_rot = Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw);
+                    transform.rotation = new_rot;
+                    cube_info.prev_rot = new_rot;
                 }
             }
         }
