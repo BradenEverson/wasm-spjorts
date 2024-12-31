@@ -111,7 +111,7 @@ pub fn setup(
     commands.spawn((
         Mesh3d(meshes.add(Sphere::new(0.3))),
         MeshMaterial3d(materials.add(Color::hsl(33.0, 0.90, 0.61))),
-        Transform::from_xyz(0.0, 0.3, BALL_START_Z),
+        Transform::from_xyz(0.0, 0.3, BALL_START_Z).looking_at(Vec3::ZERO, Vec3::Y),
         Ball::default(),
         BowlingArm::default(),
         Name::new("Ball"),
