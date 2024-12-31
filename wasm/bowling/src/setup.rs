@@ -36,6 +36,15 @@ pub struct Ball {
     pub velocity: Vec3,
 }
 
+/// Arm information on previous rotation info and current angular velocity
+#[derive(Component, Default)]
+pub struct BowlingArm {
+    /// Current rotation
+    pub curr_rotation: (f32, f32, f32),
+    /// "Speed" that angles are changing
+    pub angular_velocity: Vec3,
+}
+
 /// Marks a pin entity
 #[derive(Component)]
 pub struct Pin {
@@ -104,8 +113,9 @@ pub fn setup(
         MeshMaterial3d(materials.add(Color::hsl(33.0, 0.90, 0.61))),
         Transform::from_xyz(0.0, 0.3, BALL_START_Z),
         Ball::default(),
+        BowlingArm::default(),
         Name::new("Ball"),
-        RigidBody::Dynamic,
+        RigidBody::KinematicPositionBased,
         Collider::ball(0.3),
         Restitution::coefficient(0.4),
         GravityScale(1.0),

@@ -12,6 +12,13 @@ pub struct Runner {
     write: Sender<Communication>,
 }
 
+/// Cube state
+#[derive(Default, Component)]
+pub struct Cube {
+    /// The previous cube's rotation
+    pub prev_rot: Quat,
+}
+
 #[wasm_bindgen]
 impl Runner {
     /// Creates a new runner instance and initializes the message channel
@@ -48,6 +55,7 @@ fn setup(
         Mesh3d(meshes.add(Cuboid::default())),
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_translation(Vec3::ZERO),
+        Cube::default(),
     ));
 
     commands.spawn((
@@ -62,9 +70,12 @@ fn setup(
 }
 
 /// Moves a cube with respect to position
-fn move_cube(mut cubes: Query<'_, '_, (&Mesh3d, &mut Transform)>, read: Res<'_, ActionReader>) {
+fn move_cube(
+    mut cubes: Query<'_, '_, (&Mesh3d, &mut Transform, &mut Cube)>,
+    read: Res<'_, ActionReader>,
+) {
     if let Ok(msg) = read.0.try_recv() {
-        for (_, mut transform) in &mut cubes {
+        for (_, mut transform, mut cube_info) in &mut cubes {
             match msg {
                 JsMessage::ButtonA => {
                     transform.translation += Vec3::new(1f32, 0f32, 0f32);
@@ -73,7 +84,10 @@ fn move_cube(mut cubes: Query<'_, '_, (&Mesh3d, &mut Transform)>, read: Res<'_, 
                     transform.translation += Vec3::new(-1f32, 0f32, 0f32);
                 }
                 JsMessage::Rotate(pitch, roll, yaw) => {
-                    transform.rotate(Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw));
+                    transform.rotate(
+                        Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw) - cube_info.prev_rot,
+                    );
+                    cube_info.prev_rot = Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw);
                 }
             }
         }

@@ -3,10 +3,10 @@
 use bevy::prelude::*;
 use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
-    prelude::Velocity,
+    prelude::{RigidBody, Velocity},
 };
 use crossbeam_channel::Sender;
-use setup::{setup, Ball, Pin, BALL_SPEED, BALL_START_Z};
+use setup::{setup, Ball, BowlingArm, Pin, BALL_SPEED, BALL_START_Z};
 use spjorts_core::{communication::JsMessage, ActionReader, ActionSender, Communication};
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -56,18 +56,31 @@ fn handle_input(
         '_,
         '_,
         (
-            Query<'_, '_, (&mut Transform, &mut Ball, &mut Velocity)>,
+            Query<
+                '_,
+                '_,
+                (
+                    &mut Transform,
+                    &mut Ball,
+                    &mut Velocity,
+                    &mut BowlingArm,
+                    &mut RigidBody,
+                ),
+            >,
             Query<'_, '_, (&mut Transform, &Pin, &mut Velocity)>,
         ),
     >,
     read: Res<'_, ActionReader>,
 ) {
     if let Ok(msg) = read.0.try_recv() {
-        if let Ok((mut transform, mut ball, mut velocity)) = param_set.p0().get_single_mut() {
+        if let Ok((mut transform, mut ball, mut velocity, mut arm, mut rigid)) =
+            param_set.p0().get_single_mut()
+        {
             match msg {
                 JsMessage::ButtonA => {
                     if !ball.released {
                         ball.released = true;
+                        *rigid = RigidBody::Dynamic;
 
                         let forward = transform.local_z() * -1.0;
                         ball.velocity = forward.normalize() * BALL_SPEED;
@@ -79,6 +92,7 @@ fn handle_input(
                     transform.rotation = Quat::IDENTITY;
                     ball.velocity = Vec3::ZERO;
                     *velocity = Velocity::zero();
+                    *rigid = RigidBody::KinematicPositionBased;
                     ball.released = false;
 
                     for (mut transformation, pin, mut velocity) in param_set.p1().iter_mut() {
@@ -88,6 +102,7 @@ fn handle_input(
                 }
                 JsMessage::Rotate(pitch, roll, yaw) => {
                     if !ball.released {
+                        todo!("Based on previous rotation and velocity, calculate new speed of ball and set new rotation");
                         transform.rotate(Quat::from_euler(EulerRot::XYZ, pitch, roll, yaw));
                     }
                 }
