@@ -13,6 +13,9 @@ Long story short there's a large chain of communication that essentially goes fr
 - [x] THE CUBE 🧊
   * "Game" meant for early debugging purposes.
   * Controls a cube floating in the void, pitch roll and yaw updates determine the cube's rotation and pressing the two controller buttons moves it along the X axis in different directions.
+
+    ![cube world gaming](https://github.com/user-attachments/assets/86f86865-55c0-4a04-b40d-34314352b6b0)
+
 - [ ] Bowling 🎳
   * Implementation of a standard bowling game, currently supports moving along the x axis for aiming.
   * "Throwing" the ball via aiming with the physical controller's angle data and hitting the A button for release propels the ball forward at that angle with velocity according to the rate at which the ball is thrown
