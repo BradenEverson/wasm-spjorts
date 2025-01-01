@@ -4,10 +4,9 @@ use bevy::prelude::*;
 use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     prelude::{RigidBody, Velocity},
-    render::RapierDebugRenderPlugin,
 };
 use crossbeam_channel::Sender;
-use setup::{setup, Ball, Pin, BALL_SPEED, BALL_START_Z};
+use setup::{setup, Ball, Pin, BALL_SPEED, BALL_START_Z, LANE_WIDTH};
 use spjorts_core::{communication::JsMessage, ActionReader, ActionSender, Communication};
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -31,10 +30,9 @@ impl Runner {
         let mut app = App::new();
         app.add_plugins(DefaultPlugins)
             .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
-            .add_plugins(RapierDebugRenderPlugin::default())
             .insert_resource(ActionReader(read))
             .add_systems(Startup, setup)
-            .add_systems(Update, handle_input);
+            .add_systems(Update, (handle_input, handle_ball));
 
         Runner { app, write }
     }
@@ -49,6 +47,42 @@ impl Runner {
     #[wasm_bindgen]
     pub fn run(&mut self) {
         self.app.run();
+    }
+}
+
+/// Handles resetting the ball and pins if they go too far
+fn handle_ball(
+    mut param_set: ParamSet<
+        '_,
+        '_,
+        (
+            Query<'_, '_, (&mut Transform, &mut Ball, &mut Velocity, &mut RigidBody)>,
+            Query<'_, '_, (&mut Transform, &Pin, &mut Velocity)>,
+        ),
+    >,
+    time: Res<'_, Time>,
+) {
+    if let Ok((mut transform, mut ball, mut velocity, mut rigid)) = param_set.p0().get_single_mut()
+    {
+        if transform.translation.y <= -2.0 {
+            reset_ball(&mut transform, &mut ball, &mut rigid, &mut velocity);
+            param_set
+                .p1()
+                .iter_mut()
+                .for_each(|(mut transformation, pin, mut velocity)| {
+                    pin.reset(&mut transformation, &mut velocity)
+                });
+        } else {
+            if let Some(direction) = &mut ball.moving {
+                let threshold = LANE_WIDTH / 2.0;
+                let dx = if *direction { 0.1 } else { -0.1 };
+                transform.translation.x += dx * time.delta_secs();
+
+                if transform.translation.x >= threshold || transform.translation.x <= -threshold {
+                    *direction = !*direction
+                }
+            }
+        }
     }
 }
 
@@ -70,7 +104,7 @@ fn handle_input(
         {
             match msg {
                 JsMessage::ButtonA => {
-                    if !ball.released {
+                    if !ball.released && ball.moving.is_none() {
                         ball.released = true;
                         *rigid = RigidBody::Dynamic;
 
@@ -80,13 +114,7 @@ fn handle_input(
                     }
                 }
                 JsMessage::ButtonB => {
-                    reset_ball(&mut transform, &mut ball, &mut rigid, &mut velocity);
-
-                    param_set.p1().iter_mut().for_each(
-                        |(mut transformation, pin, mut velocity)| {
-                            pin.reset(&mut transformation, &mut velocity)
-                        },
-                    );
+                    ball.moving = None;
                 }
                 JsMessage::Rotate(pitch, roll, _) => {
                     if !ball.released {
@@ -111,6 +139,7 @@ pub fn reset_ball(
     transform.translation = Vec3::new(0.0, 0.3, BALL_START_Z);
     transform.rotation = Quat::IDENTITY;
     ball.velocity = Vec3::ZERO;
+    ball.moving = Some(true);
     *velocity = Velocity::zero();
     *rigid = RigidBody::KinematicPositionBased;
     ball.released = false;

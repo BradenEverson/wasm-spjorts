@@ -1,5 +1,7 @@
 //! Scene setup methods
 
+use std::default;
+
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::{
     Ccd, Collider, ColliderMassProperties, Friction, GravityScale, Restitution, RigidBody, Velocity,
@@ -8,7 +10,7 @@ use bevy_rapier3d::prelude::{
 /// Lane length
 const LANE_LENGTH: f32 = 30.0;
 /// Lane width
-const LANE_WIDTH: f32 = 3.0;
+pub const LANE_WIDTH: f32 = 3.0;
 
 /// Number of pins in a standard arrangement
 const PIN_COUNT: usize = 10;
@@ -28,7 +30,7 @@ const PIN_RADIUS: f32 = 0.15;
 const PIN_HEIGHT: f32 = 0.65;
 
 /// Marks the ball entity
-#[derive(Component, Default)]
+#[derive(Component)]
 pub struct Ball {
     /// Whether the ball has been “released”
     pub released: bool,
@@ -38,6 +40,23 @@ pub struct Ball {
     pub curr_rotation: Quat,
     /// "Speed" that angles are changing
     pub angular_velocity: Vec3,
+    /// If the ball is in X-axis toggle mode:
+    /// * `None` if stopped,
+    /// * `Some(true)` if moving positively towards (0 + LANE_WIDTH / 2)
+    /// * `Some(false)` if moving negatively towards (0 - LANE_WIDTH / 2)
+    pub moving: Option<bool>,
+}
+
+impl Default for Ball {
+    fn default() -> Self {
+        Self {
+            released: Default::default(),
+            velocity: Default::default(),
+            curr_rotation: Default::default(),
+            angular_velocity: Default::default(),
+            moving: Some(true),
+        }
+    }
 }
 
 /// Marks a pin entity

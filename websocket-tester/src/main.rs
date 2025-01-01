@@ -27,7 +27,7 @@ async fn main() {
         .unwrap();
     let mut rng = thread_rng();
     loop {
-        let (pitch, yaw, roll) = (PI, 0., 0.);
+        let (pitch, yaw, roll) = (0., 0., 0.);
 
         write
             .send(
