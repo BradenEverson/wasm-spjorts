@@ -27,7 +27,11 @@ async fn main() {
         .unwrap();
     let mut rng = thread_rng();
     loop {
-        let (pitch, yaw, roll) = (0., 0., 0.);
+        let (pitch, yaw, roll) = (
+            rng.gen_range(UNIT_CIRCLE_RANGE),
+            rng.gen_range(UNIT_CIRCLE_RANGE),
+            rng.gen_range(UNIT_CIRCLE_RANGE),
+        );
 
         write
             .send(
@@ -47,7 +51,7 @@ async fn main() {
             .await
             .unwrap();
 
-        std::thread::sleep(Duration::from_millis(15000));
+        std::thread::sleep(Duration::from_millis(1000));
 
         write
             .send(
