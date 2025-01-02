@@ -1,7 +1,5 @@
 //! Scene setup methods
 
-use std::default;
-
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::{
     Ccd, Collider, ColliderMassProperties, Friction, GravityScale, Restitution, RigidBody, Velocity,
@@ -64,17 +62,23 @@ impl Default for Ball {
 pub struct Pin {
     /// The Pin's initial state it will return to
     pub initial_coords: Transform,
+    /// Is this pin toppled
+    pub toppled: bool,
 }
 
 impl Pin {
     /// Initializes a Pin with initial coordinates
     pub fn new(initial_coords: Transform) -> Self {
-        Self { initial_coords }
+        Self {
+            initial_coords,
+            toppled: false,
+        }
     }
     /// Resets a transform and rotation and velocity according to an initial pin position
-    pub fn reset(&self, transform: &mut Transform, velocity: &mut Velocity) {
+    pub fn reset(&mut self, transform: &mut Transform, velocity: &mut Velocity) {
         *transform = self.initial_coords;
         *velocity = Velocity::zero();
+        self.toppled = false;
     }
 }
 
@@ -147,6 +151,10 @@ pub fn setup(
         Camera3d::default(),
         Transform::from_xyz(0.0, 3.0, -10.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
+
+    // Spawn UI Camera
+    commands.spawn(Camera2d::default());
+    commands.spawn((Text::new("Frame: 1 | Throw: 1 | Score 0"), TextColor::WHITE));
 
     commands.spawn((
         DirectionalLight::default(),

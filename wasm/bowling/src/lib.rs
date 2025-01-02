@@ -32,7 +32,7 @@ impl Runner {
             .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
             .insert_resource(ActionReader(read))
             .add_systems(Startup, setup)
-            .add_systems(Update, (handle_input, handle_ball));
+            .add_systems(Update, (handle_input, handle_ball, check_pins, update_ui));
 
         Runner { app, write }
     }
@@ -57,7 +57,7 @@ fn handle_ball(
         '_,
         (
             Query<'_, '_, (&mut Transform, &mut Ball, &mut Velocity, &mut RigidBody)>,
-            Query<'_, '_, (&mut Transform, &Pin, &mut Velocity)>,
+            Query<'_, '_, (&mut Transform, &mut Pin, &mut Velocity)>,
         ),
     >,
     time: Res<'_, Time>,
@@ -66,23 +66,33 @@ fn handle_ball(
     {
         if transform.translation.y <= -2.0 {
             reset_ball(&mut transform, &mut ball, &mut rigid, &mut velocity);
-            param_set
-                .p1()
-                .iter_mut()
-                .for_each(|(mut transformation, pin, mut velocity)| {
-                    pin.reset(&mut transformation, &mut velocity)
-                });
+            /*param_set
+            .p1()
+            .iter_mut()
+            .for_each(|(mut transformation, mut pin, mut velocity)| {
+                pin.reset(&mut transformation, &mut velocity)
+            });*/
         } else {
             if let Some(direction) = &mut ball.moving {
                 let threshold = LANE_WIDTH / 2.0;
-                let dx = if *direction { 0.1 } else { -0.1 };
+                let dx = if *direction { 1.5 } else { -1.5 };
                 transform.translation.x += dx * time.delta_secs();
 
-                if transform.translation.x >= threshold || transform.translation.x <= -threshold {
-                    *direction = !*direction
+                if transform.translation.x >= threshold {
+                    *direction = false
+                } else if transform.translation.x <= -threshold {
+                    *direction = true
                 }
             }
         }
+    }
+}
+
+/// Updates the UI
+fn update_ui(pins: Query<'_, '_, &Pin>, mut ui_elements: Query<'_, '_, &mut Text>) {
+    let toppled_count = pins.iter().filter(|pin| pin.toppled).count();
+    if let Ok(mut txt) = ui_elements.get_single_mut() {
+        *txt = Text::new(format!("Toppled: {toppled_count}"));
     }
 }
 
@@ -125,6 +135,22 @@ fn handle_input(
                     }
                 }
             }
+        }
+    }
+}
+
+/// Checks for whether pins are toppled or not
+pub fn check_pins(mut pins: Query<'_, '_, (&mut Pin, &Transform)>) {
+    let tilt_threshold = 1.0;
+
+    for (mut pin, transform) in &mut pins {
+        let up_vector = transform.rotation * Vec3::Y;
+        let dot = up_vector.dot(Vec3::Y);
+        let height = transform.translation.y;
+        // height threshold if we go that way: 0.325 is the normal height ish
+        if f32::acos(dot) > tilt_threshold {
+            web_sys::console::log_1(&format!("Pin has toppled!").into());
+            pin.toppled = true;
         }
     }
 }
