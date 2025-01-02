@@ -148,7 +148,7 @@ pub fn check_pins(
 ) {
     for (mut pin, transform) in &mut pins {
         let height = transform.translation.y;
-        if height < 0.2 {
+        if height < 0.2 && !pin.toppled {
             pin.toppled = true;
             state.topple_pin();
         }
