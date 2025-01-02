@@ -148,8 +148,8 @@ pub fn check_pins(mut pins: Query<'_, '_, (&mut Pin, &Transform)>) {
         let dot = up_vector.dot(Vec3::Y);
         let height = transform.translation.y;
         // height threshold if we go that way: 0.325 is the normal height ish
-        if f32::acos(dot) > tilt_threshold {
-            web_sys::console::log_1(&format!("Pin has toppled!").into());
+        //if f32::acos(dot) > tilt_threshold {
+        if height < 0.2 {
             pin.toppled = true;
         }
     }
