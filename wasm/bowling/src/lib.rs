@@ -54,26 +54,14 @@ impl Runner {
 
 /// Handles resetting the ball and pins if they go too far
 fn handle_ball(
-    mut param_set: ParamSet<
-        '_,
-        '_,
-        (
-            Query<'_, '_, (&mut Transform, &mut Ball, &mut Velocity, &mut RigidBody)>,
-            Query<'_, '_, (&mut Transform, &mut Pin, &mut Velocity)>,
-        ),
-    >,
+    mut ball: Query<'_, '_, (&mut Transform, &mut Ball, &mut Velocity, &mut RigidBody)>,
+    state: Res<'_, BowlingStateWrapper>,
     time: Res<'_, Time>,
 ) {
-    if let Ok((mut transform, mut ball, mut velocity, mut rigid)) = param_set.p0().get_single_mut()
-    {
+    if let Ok((mut transform, mut ball, mut velocity, mut rigid)) = ball.get_single_mut() {
         if transform.translation.y <= -2.0 {
             reset_ball(&mut transform, &mut ball, &mut rigid, &mut velocity);
-            /*param_set
-            .p1()
-            .iter_mut()
-            .for_each(|(mut transformation, mut pin, mut velocity)| {
-                pin.reset(&mut transformation, &mut velocity)
-            });*/
+            state.inc_throw_num();
         } else {
             if let Some(direction) = &mut ball.moving {
                 let threshold = LANE_WIDTH / 2.0;
@@ -92,9 +80,9 @@ fn handle_ball(
 
 /// Updates the UI
 fn update_ui(mut ui_elements: Query<'_, '_, &mut Text>, state: Res<'_, BowlingStateWrapper>) {
-    let toppled_count = state.get_pins_down();
+    let render = state.render();
     if let Ok(mut txt) = ui_elements.get_single_mut() {
-        *txt = Text::new(format!("Toppled: {toppled_count}"));
+        *txt = Text::new(render);
     }
 }
 

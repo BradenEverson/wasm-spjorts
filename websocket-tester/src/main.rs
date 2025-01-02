@@ -27,11 +27,13 @@ async fn main() {
         .unwrap();
     let mut rng = thread_rng();
     loop {
-        let (pitch, yaw, roll) = (
+        /*let (pitch, yaw, roll) = (
             rng.gen_range(UNIT_CIRCLE_RANGE),
             rng.gen_range(UNIT_CIRCLE_RANGE),
             rng.gen_range(UNIT_CIRCLE_RANGE),
-        );
+        );*/
+
+        let (pitch, yaw, roll) = (0., 0., 0.);
 
         write
             .send(

@@ -4,14 +4,17 @@ use std::sync::{Arc, RwLock};
 
 use bevy::{
     app::{Plugin, Update},
-    prelude::{Res, Resource},
+    prelude::{Query, Res, Resource, Transform},
 };
+use bevy_rapier3d::prelude::Velocity;
+
+use crate::setup::Pin;
 
 /// Bowling game current state
 #[derive(Debug, Clone, Copy)]
 pub struct BowlingState {
     /// What is the current frame we're at
-    frame_number: u8,
+    frame_number: usize,
     /// Which throw in the frame are we on
     throw_num: u8,
     /// Scores per frame
@@ -27,6 +30,40 @@ pub struct BowlingState {
 pub struct BowlingStateWrapper(Arc<RwLock<BowlingState>>);
 
 impl BowlingState {
+    /// Returns the string representation of the state
+    pub fn render(&self) -> String {
+        let renderables: Vec<String> = self
+            .frame_scores
+            .iter()
+            .enumerate()
+            .map(|(idx, val)| {
+                if idx + 1 <= self.frame_number {
+                    format!("{:^2}", val)
+                } else {
+                    "##".to_string()
+                }
+            })
+            .collect();
+        format!(
+            r#"
+    +---------------------------------------------------------+
+    | Ctrlr | 1  | 2  | 3  | 4  | 5  | 6  | 7  | 8  | 9  | 10 |
+    +-------+----+----+----+----+----+----+----+----+----+----+
+    |  #1   | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |
+    +---------------------------------------------------------+
+            "#,
+            renderables[0],
+            renderables[1],
+            renderables[2],
+            renderables[3],
+            renderables[4],
+            renderables[5],
+            renderables[6],
+            renderables[7],
+            renderables[8],
+            renderables[9]
+        )
+    }
     /// Checks if the current throw is finished
     pub fn is_throw_done(&self) -> bool {
         self.throw_done
@@ -44,12 +81,13 @@ impl BowlingState {
 
     /// Increases the current throw
     pub fn inc_throw_num(&mut self) {
-        self.throw_num += 1
+        self.throw_num += 1;
+        self.throw_done = true;
     }
 
     /// Sets the current score for the current frame
     pub fn set_score(&mut self, score: u8) {
-        self.frame_scores[self.frame_number as usize] += score
+        self.frame_scores[self.frame_number as usize - 1] += score
     }
 
     /// Increments the current frame with bounds
@@ -63,10 +101,20 @@ impl BowlingState {
     pub fn reset(&mut self) {
         self.pins_down = 0;
         self.throw_done = false;
+        self.throw_num = 1;
+    }
+
+    /// Toggles the throw status back
+    pub fn set_throw_not_done(&mut self) {
+        self.throw_done = false;
     }
 }
 
 impl BowlingStateWrapper {
+    /// Renders the current state as a scorecard
+    pub fn render(&self) -> String {
+        self.0.read().unwrap().render()
+    }
     /// Checks if the current throw is finished
     pub fn is_throw_done(&self) -> bool {
         self.0.read().unwrap().is_throw_done()
@@ -106,6 +154,11 @@ impl BowlingStateWrapper {
     pub fn topple_pin(&self) {
         self.0.write().unwrap().pins_down += 1
     }
+
+    /// Toggles the throw status back
+    pub fn set_throw_not_done(&self) {
+        self.0.write().unwrap().set_throw_not_done()
+    }
 }
 
 impl Default for BowlingState {
@@ -132,32 +185,50 @@ impl Plugin for BowlingTurnPlugin {
 
 /// Check current amount of pins down if a throw is over and add that to the score, update current
 /// frame or throw and reset pins if need be
-fn update_frame_logic(bowling_state: Res<'_, BowlingStateWrapper>) {
+fn update_frame_logic(
+    bowling_state: Res<'_, BowlingStateWrapper>,
+    mut pins: Query<'_, '_, (&mut Transform, &mut Pin, &mut Velocity)>,
+) {
     if bowling_state.is_throw_done() {
-        match (bowling_state.get_throw_num(), bowling_state.get_pins_down()) {
+        match (
+            bowling_state.get_throw_num() - 1,
+            bowling_state.get_pins_down(),
+        ) {
             (1, 10) => {
                 // Strike
                 // TODO: Make extra enum type for a score, include strike and spare or default to
                 // do *ACTUAL* score calculation
                 bowling_state.set_score(10);
                 bowling_state.reset();
+                pins.iter_mut()
+                    .for_each(|(mut transformation, mut pin, mut velocity)| {
+                        pin.reset(&mut transformation, &mut velocity)
+                    });
                 bowling_state.inc_frame();
             }
             (2, 10) => {
                 // Spare
                 bowling_state.set_score(10);
                 bowling_state.reset();
+                pins.iter_mut()
+                    .for_each(|(mut transformation, mut pin, mut velocity)| {
+                        pin.reset(&mut transformation, &mut velocity)
+                    });
                 bowling_state.inc_frame();
             }
             (1, _) => {
                 bowling_state.inc_throw_num();
+                bowling_state.set_throw_not_done();
             }
-            (2, val) => {
+            (_, val) => {
                 bowling_state.set_score(val);
                 bowling_state.reset();
+                pins.iter_mut()
+                    .for_each(|(mut transformation, mut pin, mut velocity)| {
+                        pin.reset(&mut transformation, &mut velocity)
+                    });
                 bowling_state.inc_frame();
             }
-            _ => unreachable!("All other things"),
         }
     }
 }
