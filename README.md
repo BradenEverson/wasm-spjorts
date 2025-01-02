@@ -1,11 +1,11 @@
 # Spjörts 🏂🎾⛳
-## Server Architecture for hosting WASM-built games over the web, supporting communication through physical controller hardware 💃
-
 ![rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white) 
 ![bevy](https://img.shields.io/badge/Bevy-232326?style=for-the-badge&logo=bevy&logoColor=white) 
 ![htmx](https://img.shields.io/badge/%3C/%3E%20htmx-3D72D7?style=for-the-badge&logo=mysl&logoColor=white) 
 ![wasm](https://img.shields.io/badge/WebAssembly-654FF0?style=for-the-badge&logo=WebAssembly&logoColor=white) 
 
+
+## Server Architecture for hosting WASM-built games over the web, supporting communication through physical controller hardware 💃
 
 
 This project exists because I really wanted to make [Wii Sports](https://en.wikipedia.org/wiki/Wii_Sports), while also learning more about the Bevy game engine, WASM and optimized embedded systems that need to continuously stream timely data. 
