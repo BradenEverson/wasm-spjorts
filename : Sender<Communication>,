@@ -8,7 +8,7 @@ use bevy_rapier3d::{
 use crossbeam_channel::Sender;
 use setup::{setup, Ball, Pin, BALL_SPEED, BALL_START_Z, LANE_WIDTH};
 use spjorts_core::{communication::JsMessage, ActionReader, ActionSender, Communication};
-use turns::{BowlingStateWrapper, BowlingTurnPlugin};
+use turns::BowlingStateWrapper;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub mod setup;
@@ -52,7 +52,7 @@ impl Runner {
     }
 }
 
-/// Handles resetting the ball and pins if they go too far
+/bin/bash: line 1: Bevy: command not found
 fn handle_ball(
     mut param_set: ParamSet<
         '_,

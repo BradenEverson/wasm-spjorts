@@ -1,12 +1,14 @@
 //! Turn taking plugin for the bowling state
 
+use std::sync::{Arc, RwLock};
+
 use bevy::{
     app::{Plugin, Update},
-    prelude::{ResMut, Resource},
+    prelude::{Res, Resource},
 };
 
 /// Bowling game current state
-#[derive(Resource, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct BowlingState {
     /// What is the current frame we're at
     frame_number: u8,
@@ -19,6 +21,10 @@ pub struct BowlingState {
     /// Is the current throw done
     throw_done: bool,
 }
+
+/// Send + Sync wrapper around BowlingState
+#[derive(Resource, Debug, Clone, Default)]
+pub struct BowlingStateWrapper(Arc<RwLock<BowlingState>>);
 
 impl BowlingState {
     /// Checks if the current throw is finished
@@ -60,6 +66,48 @@ impl BowlingState {
     }
 }
 
+impl BowlingStateWrapper {
+    /// Checks if the current throw is finished
+    pub fn is_throw_done(&self) -> bool {
+        self.0.read().unwrap().is_throw_done()
+    }
+
+    /// Gets the current amount of pins downed
+    pub fn get_pins_down(&self) -> u8 {
+        self.0.read().unwrap().get_pins_down()
+    }
+
+    /// Returns the current throw
+    pub fn get_throw_num(&self) -> u8 {
+        self.0.read().unwrap().get_throw_num()
+    }
+
+    /// Increases the current throw
+    pub fn inc_throw_num(&self) {
+        self.0.write().unwrap().inc_throw_num()
+    }
+
+    /// Sets the current score for the current frame
+    pub fn set_score(&self, score: u8) {
+        self.0.write().unwrap().set_score(score)
+    }
+
+    /// Increments the current frame with bounds
+    pub fn inc_frame(&self) {
+        self.0.write().unwrap().inc_frame()
+    }
+
+    /// Resets all triggers for a new frame
+    pub fn reset(&self) {
+        self.0.write().unwrap().reset()
+    }
+
+    /// Increments the current amount of toppled pins
+    pub fn topple_pin(&self) {
+        self.0.write().unwrap().pins_down += 1
+    }
+}
+
 impl Default for BowlingState {
     fn default() -> Self {
         Self {
@@ -77,14 +125,14 @@ pub struct BowlingTurnPlugin;
 
 impl Plugin for BowlingTurnPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.init_resource::<BowlingState>()
+        app.init_resource::<BowlingStateWrapper>()
             .add_systems(Update, update_frame_logic);
     }
 }
 
 /// Check current amount of pins down if a throw is over and add that to the score, update current
 /// frame or throw and reset pins if need be
-fn update_frame_logic(mut bowling_state: ResMut<'_, BowlingState>) {
+fn update_frame_logic(bowling_state: Res<'_, BowlingStateWrapper>) {
     if bowling_state.is_throw_done() {
         match (bowling_state.get_throw_num(), bowling_state.get_pins_down()) {
             (1, 10) => {
