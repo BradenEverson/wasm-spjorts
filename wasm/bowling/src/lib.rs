@@ -59,7 +59,7 @@ fn handle_ball(
     time: Res<'_, Time>,
 ) {
     if let Ok((mut transform, mut ball, mut velocity, mut rigid)) = ball.get_single_mut() {
-        if transform.translation.y <= -2.0 || (ball.released && *velocity == Velocity::zero()) {
+        if transform.translation.y <= -4.0 || (ball.released && *velocity == Velocity::zero()) {
             reset_ball(&mut transform, &mut ball, &mut rigid, &mut velocity);
             state.inc_throw_num();
         } else {
@@ -89,7 +89,7 @@ fn update_ui(
     }
 }
 
-/// Reads input from the channel and applies it to the ball’s transform or sets release velocity
+/// Reads input from the channel and applies i2 to the ball’s transform or sets release velocity
 fn handle_input(
     mut param_set: ParamSet<
         '_,
@@ -133,14 +133,16 @@ fn handle_input(
 
 /// Checks for whether pins are toppled or not
 pub fn check_pins(
-    mut pins: Query<'_, '_, (&mut Pin, &Transform)>,
+    mut pins: Query<'_, '_, (&mut Pin, &mut Transform)>,
     state: Res<'_, BowlingStateWrapper>,
 ) {
-    for (mut pin, transform) in &mut pins {
+    for (mut pin, mut transform) in &mut pins {
         let height = transform.translation.y;
         if height < 0.2 && !pin.toppled {
             pin.toppled = true;
             state.topple_pin();
+            // 🤭
+            *transform = Transform::from_xyz(0.0, -100_000.0, 0.0);
         }
     }
 }

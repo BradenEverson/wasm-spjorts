@@ -52,7 +52,7 @@ impl Ball {
 
         let scaling_factor = 10.0;
         let min_speed = 2.0;
-        let max_speed = 20.0;
+        let max_speed = 15.0;
 
         let speed = scaling_factor * angular_velocity;
 

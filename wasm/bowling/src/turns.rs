@@ -324,6 +324,7 @@ fn update_frame_logic(
     }
 }
 
+/// Returns the score for a completed scorecard
 pub fn get_score(scores: &[Score]) -> usize {
     let mut total_score = 0;
 
