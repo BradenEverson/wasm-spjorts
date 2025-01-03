@@ -105,9 +105,12 @@ impl BowlingState {
     }
 
     /// Increments the current frame with bounds
-    pub fn inc_frame(&mut self) {
+    pub fn inc_frame(&mut self) -> bool {
         if self.frame_number < 10 {
-            self.frame_number += 1
+            self.frame_number += 1;
+            false
+        } else {
+            true
         }
     }
 
@@ -155,7 +158,7 @@ impl BowlingStateWrapper {
     }
 
     /// Increments the current frame with bounds
-    pub fn inc_frame(&self) {
+    pub fn inc_frame(&self) -> bool {
         self.0.write().unwrap().inc_frame()
     }
 
@@ -204,12 +207,11 @@ fn update_frame_logic(
     mut pins: Query<'_, '_, (&mut Transform, &mut Pin, &mut Velocity)>,
 ) {
     if bowling_state.is_throw_done() {
-        match (
+        let game_over = match (
             bowling_state.get_throw_num() - 1,
             bowling_state.get_pins_down(),
         ) {
             (1, 10) => {
-                web_sys::console::log_1(&"Strike".into());
                 // Strike
                 // TODO: Make extra enum type for a score, include strike and spare or default to
                 // do *ACTUAL* score calculation
@@ -219,10 +221,9 @@ fn update_frame_logic(
                     .for_each(|(mut transformation, mut pin, mut velocity)| {
                         pin.reset(&mut transformation, &mut velocity)
                     });
-                bowling_state.inc_frame();
+                Some(bowling_state.inc_frame())
             }
             (2, 10) => {
-                web_sys::console::log_1(&"Spare".into());
                 // Spare
                 bowling_state.set_score(10);
                 bowling_state.reset();
@@ -230,22 +231,25 @@ fn update_frame_logic(
                     .for_each(|(mut transformation, mut pin, mut velocity)| {
                         pin.reset(&mut transformation, &mut velocity)
                     });
-                bowling_state.inc_frame();
+                Some(bowling_state.inc_frame())
             }
             (1, _) => {
-                web_sys::console::log_1(&"Throw 1".into());
                 bowling_state.set_throw_not_done();
+                None
             }
-            (throw, val) => {
-                web_sys::console::log_1(&format!("Throw {throw} scored: {val}").into());
+            (_, val) => {
                 bowling_state.set_score(val);
                 bowling_state.reset();
                 pins.iter_mut()
                     .for_each(|(mut transformation, mut pin, mut velocity)| {
                         pin.reset(&mut transformation, &mut velocity)
                     });
-                bowling_state.inc_frame();
+                Some(bowling_state.inc_frame())
             }
+        };
+
+        if let Some(true) = game_over {
+            todo!("End the game")
         }
     }
 }

@@ -6,7 +6,7 @@ use bevy_rapier3d::{
     prelude::{RigidBody, Velocity},
 };
 use crossbeam_channel::Sender;
-use setup::{setup, Ball, Pin, BALL_SPEED, BALL_START_Z, LANE_WIDTH};
+use setup::{setup, Ball, Pin, BALL_START_Z, LANE_WIDTH};
 use spjorts_core::{communication::JsMessage, ActionReader, ActionSender, Communication};
 use turns::{BowlingStateWrapper, BowlingTurnPlugin};
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -109,8 +109,8 @@ fn handle_input(
                         *rigid = RigidBody::Dynamic;
 
                         let forward = transform.local_z();
-                        ball.velocity = forward.normalize() * BALL_SPEED;
-                        *velocity = Velocity::linear(ball.velocity);
+                        let curr_velocity = forward.normalize() * ball.get_speed();
+                        *velocity = Velocity::linear(curr_velocity);
                     }
                 }
                 JsMessage::ButtonB => {
@@ -118,10 +118,9 @@ fn handle_input(
                 }
                 JsMessage::Rotate(pitch, roll, _) => {
                     if !ball.released {
-                        // todo!("Based on previous rotation and velocity, calculate new speed of ball and set new rotation");
                         let new = Quat::from_euler(EulerRot::XYZ, pitch, roll, 0f32);
                         transform.rotation = new;
-                        ball.curr_rotation = new;
+                        ball.rotations.push(new);
                     }
                 }
             }
@@ -154,6 +153,7 @@ pub fn reset_ball(
     transform.rotation = Quat::IDENTITY;
     ball.velocity = Vec3::ZERO;
     ball.moving = Some(true);
+    ball.rotations = vec![];
     *velocity = Velocity::zero();
     *rigid = RigidBody::KinematicPositionBased;
     ball.released = false;

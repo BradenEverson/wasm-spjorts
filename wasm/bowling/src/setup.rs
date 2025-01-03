@@ -5,6 +5,12 @@ use bevy_rapier3d::prelude::{
     Ccd, Collider, ColliderMassProperties, Friction, GravityScale, Restitution, RigidBody, Velocity,
 };
 
+pub mod ball;
+pub mod pin;
+
+pub use ball::Ball;
+pub use pin::Pin;
+
 /// Lane length
 const LANE_LENGTH: f32 = 30.0;
 /// Lane width
@@ -26,61 +32,6 @@ pub const BALL_SPEED: f32 = 10.0;
 const PIN_RADIUS: f32 = 0.15;
 /// Pin height
 const PIN_HEIGHT: f32 = 0.65;
-
-/// Marks the ball entity
-#[derive(Component)]
-pub struct Ball {
-    /// Whether the ball has been “released”
-    pub released: bool,
-    /// Current velocity
-    pub velocity: Vec3,
-    /// Current rotation
-    pub curr_rotation: Quat,
-    /// "Speed" that angles are changing
-    pub angular_velocity: Vec3,
-    /// If the ball is in X-axis toggle mode:
-    /// * `None` if stopped,
-    /// * `Some(true)` if moving positively towards (0 + LANE_WIDTH / 2)
-    /// * `Some(false)` if moving negatively towards (0 - LANE_WIDTH / 2)
-    pub moving: Option<bool>,
-}
-
-impl Default for Ball {
-    fn default() -> Self {
-        Self {
-            released: Default::default(),
-            velocity: Default::default(),
-            curr_rotation: Default::default(),
-            angular_velocity: Default::default(),
-            moving: Some(true),
-        }
-    }
-}
-
-/// Marks a pin entity
-#[derive(Component)]
-pub struct Pin {
-    /// The Pin's initial state it will return to
-    pub initial_coords: Transform,
-    /// Is this pin toppled
-    pub toppled: bool,
-}
-
-impl Pin {
-    /// Initializes a Pin with initial coordinates
-    pub fn new(initial_coords: Transform) -> Self {
-        Self {
-            initial_coords,
-            toppled: false,
-        }
-    }
-    /// Resets a transform and rotation and velocity according to an initial pin position
-    pub fn reset(&mut self, transform: &mut Transform, velocity: &mut Velocity) {
-        *transform = self.initial_coords;
-        *velocity = Velocity::zero();
-        self.toppled = false;
-    }
-}
 
 /// Spawns the lane, the ball, and pins
 pub fn setup(
