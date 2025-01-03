@@ -37,6 +37,18 @@ const PIN_HEIGHT: f32 = 0.65;
 #[derive(Component)]
 pub struct Scorecard;
 
+/// Scorecard bg identifying Component
+#[derive(Component)]
+pub struct ScorecardBg;
+
+/// Component for anything we want hidden when the Game is over
+#[derive(Component)]
+pub struct Hideable;
+
+/// Component for final score label
+#[derive(Component)]
+pub struct FinalScore;
+
 /// Spawns the lane, the ball, and pins
 pub fn setup(
     mut commands: Commands<'_, '_>,
@@ -53,6 +65,8 @@ pub fn setup(
         Restitution::coefficient(0.01),
         RigidBody::Fixed,
         Friction::coefficient(0.04),
+        Visibility::Visible,
+        Hideable,
     ));
 
     // Spawn pins
@@ -81,6 +95,8 @@ pub fn setup(
                 ColliderMassProperties::Density(0.8),
                 Velocity::linear(Vec3::ZERO),
                 Ccd::enabled(),
+                Visibility::Visible,
+                Hideable,
             ));
         }
     }
@@ -100,6 +116,8 @@ pub fn setup(
         Velocity::linear(Vec3::ZERO),
         ColliderMassProperties::Density(1.2),
         Ccd::enabled(),
+        Visibility::Visible,
+        Hideable,
     ));
 
     commands.spawn((
@@ -122,9 +140,10 @@ pub fn setup(
             },
             BackgroundColor(Color::hsl(44.0, 0.23, 0.42)),
             Visibility::Hidden,
+            ScorecardBg,
         ))
         .with_children(|parent| {
-            parent.spawn((Text::new("Final Score: "), Visibility::Inherited));
+            parent.spawn((Text::new(""), Visibility::Inherited, FinalScore));
         });
 
     commands.spawn((

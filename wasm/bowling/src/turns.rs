@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock};
 
 use bevy::{
     app::{Plugin, Update},
-    prelude::{Query, Res, Resource, Transform},
+    prelude::{Query, Res, Resource, Text, Transform, Visibility},
 };
 use bevy_rapier3d::prelude::Velocity;
 
-use crate::setup::Pin;
+use crate::setup::{FinalScore, Hideable, Pin, ScorecardBg};
 
 /// Type of score a score can be (strike, spare, normal)
 pub enum Score {
@@ -125,9 +125,18 @@ impl BowlingState {
     pub fn set_throw_not_done(&mut self) {
         self.throw_done = false;
     }
+
+    /// Gets the total score
+    pub fn get_score(&self) -> usize {
+        self.frame_scores.iter().map(|val| *val as usize).sum()
+    }
 }
 
 impl BowlingStateWrapper {
+    /// Gets the total score
+    pub fn get_score(&self) -> usize {
+        self.0.read().unwrap().get_score()
+    }
     /// Renders the current state as a scorecard
     pub fn render(&self) -> String {
         self.0.read().unwrap().render()
@@ -205,6 +214,9 @@ impl Plugin for BowlingTurnPlugin {
 fn update_frame_logic(
     bowling_state: Res<'_, BowlingStateWrapper>,
     mut pins: Query<'_, '_, (&mut Transform, &mut Pin, &mut Velocity)>,
+    mut hideable: Query<'_, '_, (&Hideable, &mut Visibility)>,
+    mut score_card: Query<'_, '_, (&mut Text, &FinalScore)>,
+    mut bg: Query<'_, '_, (&mut Visibility, &ScorecardBg)>,
 ) {
     if bowling_state.is_throw_done() {
         let game_over = match (
@@ -249,7 +261,18 @@ fn update_frame_logic(
         };
 
         if let Some(true) = game_over {
-            todo!("End the game")
+            for (_, mut vis) in hideable.iter_mut() {
+                *vis = Visibility::Hidden
+            }
+
+            if let Ok((mut vis, _)) = bg.get_single_mut() {
+                *vis = Visibility::Visible
+            }
+
+            if let Ok((mut text, _)) = score_card.get_single_mut() {
+                let final_score = format!("Final Score: {}", bowling_state.get_score());
+                *text = Text::new(final_score);
+            }
         }
     }
 }
