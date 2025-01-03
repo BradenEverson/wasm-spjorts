@@ -161,7 +161,7 @@ async fn main() {
                 }
 
                 // Send a message to the main thread
-                let msg = ControllerMessage::AngleInfo(pitch, yaw, roll);
+                let msg = ControllerMessage::AngleInfo(pitch, 0., roll);
                 if tx_main_clone.send(msg).is_err() {
                     // If sending fails (main thread closed?), just break
                     break;
