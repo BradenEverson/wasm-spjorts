@@ -59,7 +59,7 @@ fn handle_ball(
     time: Res<'_, Time>,
 ) {
     if let Ok((mut transform, mut ball, mut velocity, mut rigid)) = ball.get_single_mut() {
-        if transform.translation.y <= -2.0 || *velocity == Velocity::zero() {
+        if transform.translation.y <= -2.0 || (ball.released && *velocity == Velocity::zero()) {
             reset_ball(&mut transform, &mut ball, &mut rigid, &mut velocity);
             state.inc_throw_num();
         } else {
@@ -79,9 +79,12 @@ fn handle_ball(
 }
 
 /// Updates the UI
-fn update_ui(mut ui_elements: Query<'_, '_, &mut Text>, state: Res<'_, BowlingStateWrapper>) {
+fn update_ui(
+    mut ui_elements: Query<'_, '_, (&mut Text, &TextColor)>,
+    state: Res<'_, BowlingStateWrapper>,
+) {
     let render = state.render();
-    if let Ok(mut txt) = ui_elements.get_single_mut() {
+    if let Ok((mut txt, _)) = ui_elements.get_single_mut() {
         *txt = Text::new(render);
     }
 }

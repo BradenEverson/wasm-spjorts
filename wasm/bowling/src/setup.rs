@@ -105,7 +105,23 @@ pub fn setup(
 
     // Spawn UI Camera
     commands.spawn(Camera2d::default());
-    commands.spawn((Text::new("Frame: 1 | Throw: 1 | Score 0"), TextColor::WHITE));
+    commands.spawn((Text::new(":D"), TextColor::WHITE));
+
+    commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::hsl(44.0, 0.23, 0.42)),
+            Visibility::Hidden,
+        ))
+        .with_children(|parent| {
+            parent.spawn((Text::new("Final Score: "), Visibility::Inherited));
+        });
 
     commands.spawn((
         DirectionalLight::default(),
