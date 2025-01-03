@@ -1,25 +1,41 @@
 //! Turn taking plugin for the bowling state
 
-use std::sync::{Arc, RwLock};
+use std::{
+    fmt::Display,
+    sync::{Arc, RwLock},
+};
 
 use bevy::{
     app::{Plugin, Update},
-    prelude::{Query, Res, Resource, Text, Transform, Visibility},
+    prelude::{ParamSet, Query, Res, Resource, Text, Transform, Visibility},
 };
 use bevy_rapier3d::prelude::Velocity;
 
 use crate::setup::{FinalScore, Hideable, Pin, ScorecardBg};
 
 /// Type of score a score can be (strike, spare, normal)
+#[derive(Debug, Clone, Copy)]
 pub enum Score {
     /// A non-special score
-    Normal(u8),
+    Normal(usize),
     /// A strike
     Strike,
     /// A spare
     Spare,
     /// No score yet
     None,
+}
+
+impl Display for Score {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let val = match self {
+            Self::Normal(val) => format!("{}", val),
+            Self::Strike => "X".to_string(),
+            Self::Spare => "/".to_string(),
+            Self::None => "".to_string(),
+        };
+        write!(f, "{}", val)
+    }
 }
 
 /// Bowling game current state
@@ -30,7 +46,7 @@ pub struct BowlingState {
     /// Which throw in the frame are we on
     throw_num: u8,
     /// Scores per frame
-    frame_scores: [u8; 10],
+    frame_scores: [Score; 10],
     /// Pins currently down
     pins_down: u8,
     /// Is the current throw done
@@ -101,7 +117,17 @@ impl BowlingState {
 
     /// Sets the current score for the current frame
     pub fn set_score(&mut self, score: u8) {
-        self.frame_scores[self.frame_number as usize - 1] = score
+        self.frame_scores[self.frame_number as usize - 1] = Score::Normal(score as usize)
+    }
+
+    /// Sets the current score for the current frame to a spare
+    pub fn set_spare(&mut self) {
+        self.frame_scores[self.frame_number as usize - 1] = Score::Spare
+    }
+
+    /// Sets the current score for the current frame to a strike
+    pub fn set_strike(&mut self) {
+        self.frame_scores[self.frame_number as usize - 1] = Score::Strike
     }
 
     /// Increments the current frame with bounds
@@ -128,11 +154,20 @@ impl BowlingState {
 
     /// Gets the total score
     pub fn get_score(&self) -> usize {
-        self.frame_scores.iter().map(|val| *val as usize).sum()
+        get_score(&self.frame_scores)
     }
 }
 
 impl BowlingStateWrapper {
+    /// Sets the current score for the current frame to a spare
+    pub fn set_spare(&self) {
+        self.0.write().unwrap().set_spare()
+    }
+
+    /// Sets the current score for the current frame to a strike
+    pub fn set_strike(&self) {
+        self.0.write().unwrap().set_strike()
+    }
     /// Gets the total score
     pub fn get_score(&self) -> usize {
         self.0.read().unwrap().get_score()
@@ -192,7 +227,7 @@ impl Default for BowlingState {
         Self {
             frame_number: 1,
             throw_num: 1,
-            frame_scores: [0; 10],
+            frame_scores: [Score::None; 10],
             pins_down: 0,
             throw_done: false,
         }
@@ -213,66 +248,134 @@ impl Plugin for BowlingTurnPlugin {
 /// frame or throw and reset pins if need be
 fn update_frame_logic(
     bowling_state: Res<'_, BowlingStateWrapper>,
-    mut pins: Query<'_, '_, (&mut Transform, &mut Pin, &mut Velocity)>,
-    mut hideable: Query<'_, '_, (&Hideable, &mut Visibility)>,
-    mut score_card: Query<'_, '_, (&mut Text, &FinalScore)>,
-    mut bg: Query<'_, '_, (&mut Visibility, &ScorecardBg)>,
+    mut queries: ParamSet<
+        '_,
+        '_,
+        (
+            Query<'_, '_, (&mut Transform, &mut Pin, &mut Velocity)>,
+            Query<'_, '_, (&Hideable, &mut Visibility)>,
+            Query<'_, '_, (&mut Text, &FinalScore)>,
+            Query<'_, '_, (&mut Visibility, &ScorecardBg)>,
+        ),
+    >,
 ) {
     if bowling_state.is_throw_done() {
-        let game_over = match (
-            bowling_state.get_throw_num() - 1,
-            bowling_state.get_pins_down(),
-        ) {
-            (1, 10) => {
-                // Strike
-                // TODO: Make extra enum type for a score, include strike and spare or default to
-                // do *ACTUAL* score calculation
-                bowling_state.set_score(10);
-                bowling_state.reset();
-                pins.iter_mut()
-                    .for_each(|(mut transformation, mut pin, mut velocity)| {
-                        pin.reset(&mut transformation, &mut velocity)
-                    });
-                Some(bowling_state.inc_frame())
-            }
-            (2, 10) => {
-                // Spare
-                bowling_state.set_score(10);
-                bowling_state.reset();
-                pins.iter_mut()
-                    .for_each(|(mut transformation, mut pin, mut velocity)| {
-                        pin.reset(&mut transformation, &mut velocity)
-                    });
-                Some(bowling_state.inc_frame())
-            }
-            (1, _) => {
-                bowling_state.set_throw_not_done();
-                None
-            }
-            (_, val) => {
-                bowling_state.set_score(val);
-                bowling_state.reset();
-                pins.iter_mut()
-                    .for_each(|(mut transformation, mut pin, mut velocity)| {
-                        pin.reset(&mut transformation, &mut velocity)
-                    });
-                Some(bowling_state.inc_frame())
-            }
-        };
+        let game_over =
+            match (
+                bowling_state.get_throw_num() - 1,
+                bowling_state.get_pins_down(),
+            ) {
+                (1, 10) => {
+                    // Strike
+                    bowling_state.set_strike();
+                    bowling_state.reset();
+                    queries.p0().iter_mut().for_each(
+                        |(mut transformation, mut pin, mut velocity)| {
+                            pin.reset(&mut transformation, &mut velocity)
+                        },
+                    );
+                    Some(bowling_state.inc_frame())
+                }
+                (2, 10) => {
+                    // Spare
+                    bowling_state.set_spare();
+                    bowling_state.reset();
+                    queries.p0().iter_mut().for_each(
+                        |(mut transformation, mut pin, mut velocity)| {
+                            pin.reset(&mut transformation, &mut velocity)
+                        },
+                    );
+                    Some(bowling_state.inc_frame())
+                }
+                (1, _) => {
+                    bowling_state.set_throw_not_done();
+                    None
+                }
+                (_, val) => {
+                    bowling_state.set_score(val);
+                    bowling_state.reset();
+                    queries.p0().iter_mut().for_each(
+                        |(mut transformation, mut pin, mut velocity)| {
+                            pin.reset(&mut transformation, &mut velocity)
+                        },
+                    );
+                    Some(bowling_state.inc_frame())
+                }
+            };
 
         if let Some(true) = game_over {
-            for (_, mut vis) in hideable.iter_mut() {
+            for (_, mut vis) in queries.p1().iter_mut() {
                 *vis = Visibility::Hidden
             }
 
-            if let Ok((mut vis, _)) = bg.get_single_mut() {
+            if let Ok((mut vis, _)) = queries.p3().get_single_mut() {
                 *vis = Visibility::Visible
             }
 
-            if let Ok((mut text, _)) = score_card.get_single_mut() {
-                let final_score = format!("Final Score: {}", bowling_state.get_score());
+            if let Ok((mut text, _)) = queries.p2().get_single_mut() {
+                let final_score = format!(
+                    "Game Over!\nFinal Score: {}\n\n\nPlease Restart the Page to Return Home :)",
+                    bowling_state.get_score()
+                );
                 *text = Text::new(final_score);
             }
         }
     }
+}
+
+pub fn get_score(scores: &[Score]) -> usize {
+    let mut total_score = 0;
+
+    for i in 0..scores.len() {
+        total_score += match scores[i] {
+            Score::Normal(pins) => pins,
+            Score::Spare => 10 + next_roll_score(&scores, i + 1),
+            Score::Strike => 10 + next_two_rolls_score(&scores, i + 1),
+            _ => unreachable!("Score shouldn't be calculated until game is over"),
+        };
+    }
+
+    total_score
+}
+
+fn next_roll_score(scores: &[Score], frame_index: usize) -> usize {
+    if frame_index >= scores.len() {
+        return 0;
+    }
+
+    match scores[frame_index] {
+        Score::Normal(pins) => pins,
+        Score::Spare => 10,
+        Score::Strike => 10,
+        _ => unreachable!("Score shouldn't be calculated until game is over"),
+    }
+}
+
+fn next_two_rolls_score(scores: &[Score], frame_index: usize) -> usize {
+    let mut score = 0;
+    let mut rolls_counted = 0;
+
+    for i in frame_index..scores.len() {
+        if rolls_counted == 2 {
+            break;
+        }
+
+        match scores[i] {
+            Score::Normal(pins) => {
+                score += pins;
+                rolls_counted += 1;
+            }
+            Score::Spare => {
+                score += 10;
+                rolls_counted += 1;
+            }
+            Score::Strike => {
+                score += 10;
+                rolls_counted += 1;
+            }
+            _ => unreachable!("Score shouldn't be calculated until game is over"),
+        }
+    }
+
+    score
 }
