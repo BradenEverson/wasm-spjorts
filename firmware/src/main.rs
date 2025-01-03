@@ -10,7 +10,7 @@ use server::control::{msg::WsMessage, ControllerMessage};
 use std::{
     fs::File,
     io::Read,
-    sync::mpsc::{channel, Receiver, Sender},
+    sync::mpsc::channel,
     sync::{Arc, Mutex},
     thread,
     time::Duration,
@@ -25,10 +25,12 @@ pub const MPU6050_ADDR: u16 = 0x68;
 
 /// MPU6050 Registers
 pub const PWR_MGMT_1: u8 = 0x6B;
+/// MPU6050 Registers
 pub const ACCEL_XOUT_H: u8 = 0x3B;
 
-/// A and B Button's pins
+/// A Button pins
 pub const BUTTON_A_PIN: u8 = 5;
+/// B Button pins
 pub const BUTTON_B_PIN: u8 = 6;
 
 /// Sensitivity constants (assuming ±2g and ±250 deg/s)
@@ -40,15 +42,33 @@ const GYRO_SENS: f32 = 131.0; // LSB/(deg/s)
 // Typically in the 0.90 - 0.98 range. Adjust as needed.
 const ALPHA: f32 = 0.98;
 
+/// Repeadetly tries to connect to a websocket until successful, waiting a given duration each time
+/// it fails
+async fn connect_with_retries(
+    url: &str,
+    retry_interval: Duration,
+) -> tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>> {
+    loop {
+        match connect_async(url).await {
+            Ok((ws, _)) => return ws,
+            Err(e) => {
+                eprintln!(
+                    "Failed to connect: {}. Retrying in {:?}...",
+                    e, retry_interval
+                );
+                std::thread::sleep(retry_interval);
+            }
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let id = read_id();
     let (tx_main, rx_main) = channel();
 
     // Connect to server
-    let (ws, _) = connect_async("ws://192.168.10.137:7878")
-        .await
-        .expect("Connect to ws");
+    let ws = connect_with_retries("ws://192.168.10.137:7878", Duration::from_secs(15)).await;
 
     let (mut write, _read) = ws.split();
     write
@@ -255,4 +275,3 @@ fn read_id() -> u64 {
         .expect("Failed to read ID file");
     buf.trim().parse().expect("ID File not in proper format")
 }
-
