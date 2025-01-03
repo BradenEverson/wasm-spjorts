@@ -10,6 +10,18 @@ use bevy_rapier3d::prelude::Velocity;
 
 use crate::setup::Pin;
 
+/// Type of score a score can be (strike, spare, normal)
+pub enum Score {
+    /// A non-special score
+    Normal(u8),
+    /// A strike
+    Strike,
+    /// A spare
+    Spare,
+    /// No score yet
+    None,
+}
+
 /// Bowling game current state
 #[derive(Debug, Clone, Copy)]
 pub struct BowlingState {
@@ -37,20 +49,22 @@ impl BowlingState {
             .iter()
             .enumerate()
             .map(|(idx, val)| {
-                if idx + 1 <= self.frame_number {
+                if idx + 1 < self.frame_number {
                     format!("{:^2}", val)
+                } else if idx + 1 == self.frame_number {
+                    "__".to_string()
                 } else {
-                    "##".to_string()
+                    "--".to_string()
                 }
             })
             .collect();
         format!(
             r#"
-    +---------------------------------------------------------+
+    +-------+----+----+----+----+----+----+----+----+----+----+
     | Ctrlr | 1  | 2  | 3  | 4  | 5  | 6  | 7  | 8  | 9  | 10 |
     +-------+----+----+----+----+----+----+----+----+----+----+
     |  #1   | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |
-    +---------------------------------------------------------+
+    +-------+----+----+----+----+----+----+----+----+----+----+
             "#,
             renderables[0],
             renderables[1],
@@ -87,7 +101,7 @@ impl BowlingState {
 
     /// Sets the current score for the current frame
     pub fn set_score(&mut self, score: u8) {
-        self.frame_scores[self.frame_number as usize - 1] += score
+        self.frame_scores[self.frame_number as usize - 1] = score
     }
 
     /// Increments the current frame with bounds
@@ -195,6 +209,7 @@ fn update_frame_logic(
             bowling_state.get_pins_down(),
         ) {
             (1, 10) => {
+                web_sys::console::log_1(&"Strike".into());
                 // Strike
                 // TODO: Make extra enum type for a score, include strike and spare or default to
                 // do *ACTUAL* score calculation
@@ -207,6 +222,7 @@ fn update_frame_logic(
                 bowling_state.inc_frame();
             }
             (2, 10) => {
+                web_sys::console::log_1(&"Spare".into());
                 // Spare
                 bowling_state.set_score(10);
                 bowling_state.reset();
@@ -217,10 +233,11 @@ fn update_frame_logic(
                 bowling_state.inc_frame();
             }
             (1, _) => {
-                bowling_state.inc_throw_num();
+                web_sys::console::log_1(&"Throw 1".into());
                 bowling_state.set_throw_not_done();
             }
-            (_, val) => {
+            (throw, val) => {
+                web_sys::console::log_1(&format!("Throw {throw} scored: {val}").into());
                 bowling_state.set_score(val);
                 bowling_state.reset();
                 pins.iter_mut()
