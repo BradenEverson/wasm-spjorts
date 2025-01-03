@@ -33,6 +33,10 @@ const PIN_RADIUS: f32 = 0.15;
 /// Pin height
 const PIN_HEIGHT: f32 = 0.65;
 
+/// Scorecard identifying Component
+#[derive(Component)]
+pub struct Scorecard;
+
 /// Spawns the lane, the ball, and pins
 pub fn setup(
     mut commands: Commands<'_, '_>,
@@ -105,7 +109,7 @@ pub fn setup(
 
     // Spawn UI Camera
     commands.spawn(Camera2d::default());
-    commands.spawn((Text::new(":D"), TextColor::WHITE));
+    commands.spawn((Text::new(":D"), TextColor::WHITE, Scorecard));
 
     commands
         .spawn((

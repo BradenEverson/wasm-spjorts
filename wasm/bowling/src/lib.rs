@@ -6,7 +6,7 @@ use bevy_rapier3d::{
     prelude::{RigidBody, Velocity},
 };
 use crossbeam_channel::Sender;
-use setup::{setup, Ball, Pin, BALL_START_Z, LANE_WIDTH};
+use setup::{setup, Ball, Pin, Scorecard, BALL_START_Z, LANE_WIDTH};
 use spjorts_core::{communication::JsMessage, ActionReader, ActionSender, Communication};
 use turns::{BowlingStateWrapper, BowlingTurnPlugin};
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -80,7 +80,7 @@ fn handle_ball(
 
 /// Updates the UI
 fn update_ui(
-    mut ui_elements: Query<'_, '_, (&mut Text, &TextColor)>,
+    mut ui_elements: Query<'_, '_, (&mut Text, &Scorecard)>,
     state: Res<'_, BowlingStateWrapper>,
 ) {
     let render = state.render();
