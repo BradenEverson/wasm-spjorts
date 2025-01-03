@@ -66,7 +66,8 @@ impl BowlingState {
             .enumerate()
             .map(|(idx, val)| {
                 if idx + 1 < self.frame_number {
-                    format!("{:^2}", val)
+                    let rendered = format!("{}", val);
+                    format!("{:^2}", rendered)
                 } else if idx + 1 == self.frame_number {
                     "__".to_string()
                 } else {
