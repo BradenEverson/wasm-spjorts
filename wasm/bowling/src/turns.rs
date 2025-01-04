@@ -29,6 +29,7 @@ pub enum Score {
 impl Display for Score {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let val = match self {
+            Self::Normal(0) => "--".to_string(),
             Self::Normal(val) => format!("{}", val),
             Self::Strike => "X".to_string(),
             Self::Spare => "/".to_string(),
@@ -71,13 +72,11 @@ impl BowlingState {
                     .iter()
                     .enumerate()
                     .map(|(idx, val)| {
-                        if idx + 1 < self.frame_number {
+                        if idx + 1 <= self.frame_number {
                             let rendered = format!("{}", val);
                             format!("{:^2}", rendered)
-                        } else if idx + 1 == self.frame_number {
-                            "__".to_string()
                         } else {
-                            "--".to_string()
+                            "@@".to_string()
                         }
                     })
                     .collect::<Vec<_>>();
@@ -156,13 +155,20 @@ impl BowlingState {
     /// Increments the current frame with bounds
     pub fn inc_frame(&mut self) -> bool {
         if self.frame_number < 10 {
-            self.frame_number += 1;
             if self.turn >= self.player_frame_scores.len() - 1 {
-                self.turn = 0
+                self.turn = 0;
+                self.frame_number += 1;
             } else {
                 self.turn += 1
             }
             false
+        } else if self.frame_number == 10 {
+            if self.turn >= self.player_frame_scores.len() - 1 {
+                true
+            } else {
+                self.turn += 1;
+                false
+            }
         } else {
             true
         }
@@ -346,10 +352,14 @@ fn update_frame_logic(
             }
 
             if let Ok((mut text, _)) = queries.p2().get_single_mut() {
+                let scores = bowling_state.get_score();
+                let (winner, score) = scores
+                    .iter()
+                    .max_by(|(_, prev_score), (_, score)| prev_score.cmp(score))
+                    .unwrap();
                 let final_score = format!(
-                    "Game Over!\nFinal Scores: {:?}\n\n\nPlease Restart the Page to Return Home :)",
-                    bowling_state.get_score()
-                );
+                    "Game Over!\nPlayer {} wins with a final score of: {}\n\n\n\n\nPlease Restart the Page to Return Home :)",
+                winner, score);
                 *text = Text::new(final_score);
             }
         }
