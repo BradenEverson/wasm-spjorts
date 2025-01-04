@@ -23,10 +23,9 @@ Long story short there's a large chain of communication that essentially goes fr
 
     ![cube world gaming](https://github.com/user-attachments/assets/86f86865-55c0-4a04-b40d-34314352b6b0)
 
-- [ ] Bowling 🎳
+- [x] Bowling 🎳
   * Implementation of a standard bowling game, currently supports moving along the x axis for aiming.
   * "Throwing" the ball via aiming with the physical controller's angle data and hitting the A button for release propels the ball forward at that angle with velocity according to the rate at which the ball is thrown
   * Rapier3d is used for all physics simulation, which allows for (somewhat) accurate bowling!
-  - [ ] **Still in progress**: Implementing proper score handling and external game state info, basically everything that isn't aiming and throwing a ball 
-   
-    ![bowling](https://github.com/user-attachments/assets/9c7f337f-12df-41a8-a688-176bfd200f43)
+  * Still working out the kinks on one-to-one physical representations of bowling balls and pins.
+    ![bowling](https://github.com/user-attachments/assets/7835c989-e528-4faa-9516-1a355acdbea9)
