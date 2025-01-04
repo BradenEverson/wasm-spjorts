@@ -33,6 +33,19 @@ async fn main() {
             rng.gen_range(UNIT_CIRCLE_RANGE),
         );*/
 
+        let (pitch, yaw, roll) = (2.0 * PI, 2.0 * PI, 2.0 * PI);
+
+        write
+            .send(
+                ControllerMessage::AngleInfo(pitch, yaw, roll)
+                    .to_ws_message()
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        std::thread::sleep(Duration::from_millis(100));
+
         let (pitch, yaw, roll) = (0., 0., 0.);
 
         write

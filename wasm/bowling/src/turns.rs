@@ -39,18 +39,20 @@ impl Display for Score {
 }
 
 /// Bowling game current state
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct BowlingState {
     /// What is the current frame we're at
     frame_number: usize,
     /// Which throw in the frame are we on
     throw_num: u8,
-    /// Scores per frame
-    frame_scores: [Score; 10],
+    /// Scores per frame for each player
+    player_frame_scores: Vec<[Score; 10]>,
     /// Pins currently down
     pins_down: u8,
     /// Is the current throw done
     throw_done: bool,
+    /// Current player's turn
+    turn: usize,
 }
 
 /// Send + Sync wrapper around BowlingState
@@ -60,40 +62,59 @@ pub struct BowlingStateWrapper(Arc<RwLock<BowlingState>>);
 impl BowlingState {
     /// Returns the string representation of the state
     pub fn render(&self) -> String {
-        let renderables: Vec<String> = self
-            .frame_scores
+        let scores: Vec<String> = self
+            .player_frame_scores
             .iter()
             .enumerate()
-            .map(|(idx, val)| {
-                if idx + 1 < self.frame_number {
-                    let rendered = format!("{}", val);
-                    format!("{:^2}", rendered)
-                } else if idx + 1 == self.frame_number {
-                    "__".to_string()
-                } else {
-                    "--".to_string()
-                }
+            .map(|(player, score)| {
+                let renderables = score
+                    .iter()
+                    .enumerate()
+                    .map(|(idx, val)| {
+                        if idx + 1 < self.frame_number {
+                            let rendered = format!("{}", val);
+                            format!("{:^2}", rendered)
+                        } else if idx + 1 == self.frame_number {
+                            "__".to_string()
+                        } else {
+                            "--".to_string()
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                let arrow = if player == self.turn { "->" } else { "  " };
+
+                format!(
+                    r#"
+     {} |  {:^2}   | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |
+        +-------+----+----+----+----+----+----+----+----+----+----+"#,
+                    arrow,
+                    player,
+                    renderables[0],
+                    renderables[1],
+                    renderables[2],
+                    renderables[3],
+                    renderables[4],
+                    renderables[5],
+                    renderables[6],
+                    renderables[7],
+                    renderables[8],
+                    renderables[9]
+                )
             })
             .collect();
-        format!(
-            r#"
-    +-------+----+----+----+----+----+----+----+----+----+----+
-    | Ctrlr | 1  | 2  | 3  | 4  | 5  | 6  | 7  | 8  | 9  | 10 |
-    +-------+----+----+----+----+----+----+----+----+----+----+
-    |  #1   | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |
-    +-------+----+----+----+----+----+----+----+----+----+----+
-            "#,
-            renderables[0],
-            renderables[1],
-            renderables[2],
-            renderables[3],
-            renderables[4],
-            renderables[5],
-            renderables[6],
-            renderables[7],
-            renderables[8],
-            renderables[9]
-        )
+
+        let mut start_str = r#"
+        +-------+----+----+----+----+----+----+----+----+----+----+
+        | Plr # | 1  | 2  | 3  | 4  | 5  | 6  | 7  | 8  | 9  | 10 |
+        +-------+----+----+----+----+----+----+----+----+----+----+"#
+            .to_string();
+
+        for player in scores {
+            start_str = format!("{}{}", start_str, player)
+        }
+
+        start_str
     }
     /// Checks if the current throw is finished
     pub fn is_throw_done(&self) -> bool {
@@ -118,23 +139,29 @@ impl BowlingState {
 
     /// Sets the current score for the current frame
     pub fn set_score(&mut self, score: u8) {
-        self.frame_scores[self.frame_number as usize - 1] = Score::Normal(score as usize)
+        self.player_frame_scores[self.turn][self.frame_number as usize - 1] =
+            Score::Normal(score as usize)
     }
 
     /// Sets the current score for the current frame to a spare
     pub fn set_spare(&mut self) {
-        self.frame_scores[self.frame_number as usize - 1] = Score::Spare
+        self.player_frame_scores[self.turn][self.frame_number as usize - 1] = Score::Spare
     }
 
     /// Sets the current score for the current frame to a strike
     pub fn set_strike(&mut self) {
-        self.frame_scores[self.frame_number as usize - 1] = Score::Strike
+        self.player_frame_scores[self.turn][self.frame_number as usize - 1] = Score::Strike
     }
 
     /// Increments the current frame with bounds
     pub fn inc_frame(&mut self) -> bool {
         if self.frame_number < 10 {
             self.frame_number += 1;
+            if self.turn >= self.player_frame_scores.len() - 1 {
+                self.turn = 0
+            } else {
+                self.turn += 1
+            }
             false
         } else {
             true
@@ -154,8 +181,12 @@ impl BowlingState {
     }
 
     /// Gets the total score
-    pub fn get_score(&self) -> usize {
-        get_score(&self.frame_scores)
+    pub fn get_score(&self) -> Vec<(usize, usize)> {
+        self.player_frame_scores
+            .iter()
+            .enumerate()
+            .map(|(id, score)| (id, get_score(score)))
+            .collect()
     }
 }
 
@@ -170,7 +201,7 @@ impl BowlingStateWrapper {
         self.0.write().unwrap().set_strike()
     }
     /// Gets the total score
-    pub fn get_score(&self) -> usize {
+    pub fn get_score(&self) -> Vec<(usize, usize)> {
         self.0.read().unwrap().get_score()
     }
     /// Renders the current state as a scorecard
@@ -228,7 +259,8 @@ impl Default for BowlingState {
         Self {
             frame_number: 1,
             throw_num: 1,
-            frame_scores: [Score::None; 10],
+            player_frame_scores: vec![[Score::None; 10]; 2],
+            turn: 0,
             pins_down: 0,
             throw_done: false,
         }
@@ -315,7 +347,7 @@ fn update_frame_logic(
 
             if let Ok((mut text, _)) = queries.p2().get_single_mut() {
                 let final_score = format!(
-                    "Game Over!\nFinal Score: {}\n\n\nPlease Restart the Page to Return Home :)",
+                    "Game Over!\nFinal Scores: {:?}\n\n\nPlease Restart the Page to Return Home :)",
                     bowling_state.get_score()
                 );
                 *text = Text::new(final_score);
