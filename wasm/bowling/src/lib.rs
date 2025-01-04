@@ -119,9 +119,9 @@ fn handle_input(
                 JsMessage::ButtonB => {
                     ball.moving = None;
                 }
-                JsMessage::Rotate(pitch, roll, _) => {
+                JsMessage::Rotate(pitch, _, yaw) => {
                     if !ball.released {
-                        let new = Quat::from_euler(EulerRot::XYZ, pitch, roll, 0f32);
+                        let new = Quat::from_euler(EulerRot::XYZ, pitch, 0f32, yaw);
                         transform.rotation = new;
                         ball.rotations.push(new);
                     }
