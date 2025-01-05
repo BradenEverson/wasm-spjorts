@@ -43,7 +43,7 @@ impl Display for Score {
 pub fn display_score_tuple(scores: &(Score, Score)) -> String {
     web_sys::console::log_1(&format!("Score: {scores:?}").into());
     let flattened = match scores {
-        (Score::Normal(num1), Score::Normal(num2)) => Score::Normal(num1 + num2),
+        (Score::Normal(_), Score::Normal(num)) => Score::Normal(*num),
         (Score::Normal(num1), Score::None) => Score::Normal(*num1),
         (_, Score::Spare) => Score::Spare,
         (Score::Strike, _) => Score::Strike,
@@ -154,7 +154,7 @@ impl BowlingState {
     /// Sets the current score for the current frame
     pub fn set_score(&mut self, score: u8) {
         web_sys::console::log_1(&format!("Throw # {}", self.throw_num).into());
-        if self.throw_num <= 1 {
+        if self.throw_num <= 2 {
             self.player_frame_scores[self.turn][self.frame_number as usize - 1].0 =
                 Score::Normal(score as usize)
         } else {
