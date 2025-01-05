@@ -152,12 +152,13 @@ impl BowlingState {
 
     /// Sets the current score for the current frame
     pub fn set_score(&mut self, score: u8) {
-        if self.throw_num == 1 {
+        if self.throw_num <= 2 {
             self.player_frame_scores[self.turn][self.frame_number as usize - 1].0 =
                 Score::Normal(score as usize)
+        } else {
+            self.player_frame_scores[self.turn][self.frame_number as usize - 1].1 =
+                Score::Normal(score as usize)
         }
-        self.player_frame_scores[self.turn][self.frame_number as usize - 1].1 =
-            Score::Normal(score as usize)
     }
 
     /// Sets the current score for the current frame to a spare
