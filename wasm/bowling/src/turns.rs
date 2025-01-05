@@ -357,7 +357,8 @@ fn update_frame_logic(
                     );
                     Some(bowling_state.inc_frame())
                 }
-                (1, _) => {
+                (1, val) => {
+                    bowling_state.set_score(val);
                     bowling_state.set_throw_not_done();
                     None
                 }
