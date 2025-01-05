@@ -39,6 +39,19 @@ impl Display for Score {
     }
 }
 
+/// Displays a tuple of frame scores
+pub fn display_score_tuple(scores: &(Score, Score)) -> String {
+    let flattened = match scores {
+        (Score::Normal(num1), Score::Normal(num2)) => Score::Normal(num1 + num2),
+        (_, Score::Spare) => Score::Spare,
+        (Score::Strike, _) => Score::Strike,
+
+        _ => unreachable!("Unrepresentable state"),
+    };
+
+    format!("{}", flattened)
+}
+
 /// Bowling game current state
 #[derive(Debug, Clone)]
 pub struct BowlingState {
@@ -47,7 +60,7 @@ pub struct BowlingState {
     /// Which throw in the frame are we on
     throw_num: u8,
     /// Scores per frame for each player
-    player_frame_scores: Vec<[Score; 10]>,
+    player_frame_scores: Vec<[(Score, Score); 10]>,
     /// Pins currently down
     pins_down: u8,
     /// Is the current throw done
@@ -73,7 +86,7 @@ impl BowlingState {
                     .enumerate()
                     .map(|(idx, val)| {
                         if idx + 1 <= self.frame_number {
-                            let rendered = format!("{}", val);
+                            let rendered = format!("{}", display_score_tuple(val));
                             format!("{:^2}", rendered)
                         } else {
                             "##".to_string()
@@ -138,18 +151,22 @@ impl BowlingState {
 
     /// Sets the current score for the current frame
     pub fn set_score(&mut self, score: u8) {
-        self.player_frame_scores[self.turn][self.frame_number as usize - 1] =
+        if self.throw_num == 1 {
+            self.player_frame_scores[self.turn][self.frame_number as usize - 1].0 =
+                Score::Normal(score as usize)
+        }
+        self.player_frame_scores[self.turn][self.frame_number as usize - 1].1 =
             Score::Normal(score as usize)
     }
 
     /// Sets the current score for the current frame to a spare
     pub fn set_spare(&mut self) {
-        self.player_frame_scores[self.turn][self.frame_number as usize - 1] = Score::Spare
+        self.player_frame_scores[self.turn][self.frame_number as usize - 1].1 = Score::Spare
     }
 
     /// Sets the current score for the current frame to a strike
     pub fn set_strike(&mut self) {
-        self.player_frame_scores[self.turn][self.frame_number as usize - 1] = Score::Strike
+        self.player_frame_scores[self.turn][self.frame_number as usize - 1].0 = Score::Strike
     }
 
     /// Increments the current frame with bounds
@@ -197,7 +214,7 @@ impl BowlingState {
 
     /// Sets the number of players in a game
     pub fn set_players(&mut self, num: usize) {
-        self.player_frame_scores = vec![[Score::None; 10]; num]
+        self.player_frame_scores = vec![[(Score::None, Score::None); 10]; num]
     }
 }
 
@@ -275,7 +292,7 @@ impl Default for BowlingState {
         Self {
             frame_number: 1,
             throw_num: 1,
-            player_frame_scores: vec![[Score::None; 10]],
+            player_frame_scores: vec![[(Score::None, Score::None); 10]],
             turn: 0,
             pins_down: 0,
             throw_done: false,
@@ -377,14 +394,14 @@ fn update_frame_logic(
 }
 
 /// Returns the score for a completed scorecard
-pub fn get_score(scores: &[Score]) -> usize {
+pub fn get_score(scores: &[(Score, Score)]) -> usize {
     let mut total_score = 0;
 
     for i in 0..scores.len() {
         total_score += match scores[i] {
-            Score::Normal(pins) => pins,
-            Score::Spare => 10 + next_roll_score(&scores, i + 1),
-            Score::Strike => 10 + next_two_rolls_score(&scores, i + 1),
+            (Score::Normal(pins1), Score::Normal(pins2)) => pins1 + pins2,
+            (_, Score::Spare) => 10 + next_roll_score(&scores, i + 1),
+            (Score::Strike, _) => 10 + next_two_rolls_score(&scores, i + 1),
             _ => unreachable!("Score shouldn't be calculated until game is over"),
         };
     }
@@ -392,12 +409,12 @@ pub fn get_score(scores: &[Score]) -> usize {
     total_score
 }
 
-fn next_roll_score(scores: &[Score], frame_index: usize) -> usize {
+fn next_roll_score(scores: &[(Score, Score)], frame_index: usize) -> usize {
     if frame_index >= scores.len() {
         return 0;
     }
 
-    match scores[frame_index] {
+    match scores[frame_index].0 {
         Score::Normal(pins) => pins,
         Score::Spare => 10,
         Score::Strike => 10,
@@ -405,31 +422,15 @@ fn next_roll_score(scores: &[Score], frame_index: usize) -> usize {
     }
 }
 
-fn next_two_rolls_score(scores: &[Score], frame_index: usize) -> usize {
-    let mut score = 0;
-    let mut rolls_counted = 0;
-
-    for i in frame_index..scores.len() {
-        if rolls_counted == 2 {
-            break;
-        }
-
-        match scores[i] {
-            Score::Normal(pins) => {
-                score += pins;
-                rolls_counted += 1;
-            }
-            Score::Spare => {
-                score += 10;
-                rolls_counted += 1;
-            }
-            Score::Strike => {
-                score += 10;
-                rolls_counted += 1;
-            }
-            _ => unreachable!("Score shouldn't be calculated until game is over"),
-        }
+fn next_two_rolls_score(scores: &[(Score, Score)], frame_index: usize) -> usize {
+    if frame_index >= scores.len() {
+        return 0;
     }
 
-    score
+    match scores[frame_index] {
+        (Score::Normal(pins1), Score::Normal(pins2)) => pins1 + pins2,
+        (_, Score::Spare) => 10,
+        (Score::Strike, _) => 10,
+        _ => unreachable!("Score shouldn't be calculated until game is over"),
+    }
 }
