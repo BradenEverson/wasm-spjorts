@@ -43,7 +43,7 @@ impl Display for Score {
 pub fn display_score_tuple(scores: &(Score, Score)) -> String {
     let flattened = match scores {
         (Score::Normal(num1), Score::Normal(num2)) => Score::Normal(num1 + num2),
-        (Score::Normal(num1), Score::None) => Score::Normal(num1),
+        (Score::Normal(num1), Score::None) => Score::Normal(*num1),
         (_, Score::Spare) => Score::Spare,
         (Score::Strike, _) => Score::Strike,
         (Score::None, Score::None) => Score::None,
