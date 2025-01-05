@@ -103,7 +103,7 @@ impl BowlingState {
 {} |  {:^2}   | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |
     +-------+----+----+----+----+----+----+----+----+----+----+"#,
                     arrow,
-                    player,
+                    player + 1,
                     renderables[0],
                     renderables[1],
                     renderables[2],
@@ -391,7 +391,7 @@ fn update_frame_logic(
                     .unwrap();
                 let final_score = format!(
                     "Game Over!\nPlayer {} wins with a final score of: {}\n\n\n\n\nPlease Restart the Page to Return Home :)",
-                winner, score);
+                winner + 1, score);
                 *text = Text::new(final_score);
             }
         }
