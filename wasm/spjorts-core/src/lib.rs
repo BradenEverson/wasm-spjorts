@@ -39,6 +39,13 @@ impl ActionSender {
             .send(JsMessage::Rotate(pitch, roll, yaw))
             .expect("Rotate")
     }
+
+    /// Set the number of players in the game
+    pub fn set_players(&mut self, players: usize) {
+        self.0
+            .send(JsMessage::SetPlayers(players))
+            .expect("Set num of players")
+    }
 }
 
 /// A JavaScript event reader pipeline

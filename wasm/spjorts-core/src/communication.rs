@@ -8,4 +8,6 @@ pub enum JsMessage {
     ButtonA,
     /// Press B button
     ButtonB,
+    /// Set number of players in a game
+    SetPlayers(usize),
 }

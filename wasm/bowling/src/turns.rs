@@ -194,6 +194,11 @@ impl BowlingState {
             .map(|(id, score)| (id, get_score(score)))
             .collect()
     }
+
+    /// Sets the number of players in a game
+    pub fn set_players(&mut self, num: usize) {
+        self.player_frame_scores = vec![[Score::None; 10]; num]
+    }
 }
 
 impl BowlingStateWrapper {
@@ -258,6 +263,11 @@ impl BowlingStateWrapper {
     pub fn set_throw_not_done(&self) {
         self.0.write().unwrap().set_throw_not_done()
     }
+
+    /// Sets the number of players in the current game
+    pub fn set_players(&self, num: usize) {
+        self.0.write().unwrap().set_players(num)
+    }
 }
 
 impl Default for BowlingState {
@@ -265,7 +275,7 @@ impl Default for BowlingState {
         Self {
             frame_number: 1,
             throw_num: 1,
-            player_frame_scores: vec![[Score::None; 10]; 2],
+            player_frame_scores: vec![[Score::None; 10]],
             turn: 0,
             pins_down: 0,
             throw_done: false,

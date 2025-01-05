@@ -88,6 +88,7 @@ fn move_cube(
                     transform.rotation = new_rot;
                     cube_info.prev_rot = new_rot;
                 }
+                _ => {}
             }
         }
     }

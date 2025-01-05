@@ -11,6 +11,8 @@ pub struct Game {
     pub img: &'static str,
     /// Description
     pub name: &'static str,
+    /// If a game is multiplayer or not
+    pub multiplayer: bool,
 }
 
 impl Game {
@@ -119,6 +121,11 @@ impl Game {
                             let runner = new Runner();
                             let send = runner.get_send();
 
+                            if ({}) {{
+                                let players = parseInt(prompt("How many players:"));
+                                send.set_players(players);
+                            }}
+
                             socket.addEventListener("message", (event) => {{
                                 const buffer = event.data;
                                 const dataView = new DataView(buffer);
@@ -162,17 +169,18 @@ impl Game {
                 </body>
             </html>
             "#,
-            self.name, self.wasm_path
+            self.name, self.wasm_path, self.multiplayer
         )
     }
 }
 
 macro_rules! game {
-    ($wasm:expr_2021, $img:expr_2021, $descr:expr_2021) => {
+    ($wasm:expr_2021, $img:expr_2021, $descr:expr_2021, $mult:expr_2021) => {
         Game {
             wasm_path: $wasm,
             img: $img,
             name: $descr,
+            multiplayer: $mult,
         }
     };
 }
@@ -182,11 +190,13 @@ pub const GAMES: &'static [Game] = &[
     game!(
         "/wasm/cube/out/cube.js",
         "/frontend/bg/cube.png",
-        "THE_CUBE"
+        "THE_CUBE",
+        false
     ),
     game!(
         "/wasm/bowling/out/bowling.js",
         "/frontend/bg/bowling.jpg",
-        "Bowling"
+        "Bowling",
+        true
     ),
 ];

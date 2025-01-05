@@ -100,6 +100,7 @@ fn handle_input(
         ),
     >,
     read: Res<'_, ActionReader>,
+    state: Res<'_, BowlingStateWrapper>,
 ) {
     if let Ok(msg) = read.0.try_recv() {
         if let Ok((mut transform, mut ball, mut velocity, mut rigid)) =
@@ -126,6 +127,7 @@ fn handle_input(
                         ball.rotations.push(new);
                     }
                 }
+                JsMessage::SetPlayers(num) => state.set_players(num),
             }
         }
     }
