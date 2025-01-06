@@ -17,7 +17,7 @@ use std::{
 };
 use tokio_tungstenite::connect_async;
 
-/// Poll time for angles (ms)
+/// Poll time for angles
 pub const ANGLE_WAIT_TIME: u64 = 50;
 
 /// MPU6050 I2C address
@@ -34,12 +34,10 @@ pub const BUTTON_A_PIN: u8 = 5;
 pub const BUTTON_B_PIN: u8 = 6;
 
 /// Sensitivity constants (assuming ±2g and ±250 deg/s)
-/// (Check the datasheet if you changed full-scale ranges.)
 const ACCEL_SENS: f32 = 16384.0; // LSB/g
 const GYRO_SENS: f32 = 131.0; // LSB/(deg/s)
 
 // Complementary filter alpha parameter
-// Typically in the 0.90 - 0.98 range. Adjust as needed.
 const ALPHA: f32 = 0.98;
 
 /// Repeadetly tries to connect to a websocket until successful, waiting a given duration each time
@@ -64,6 +62,9 @@ async fn connect_with_retries(
 
 #[tokio::main]
 async fn main() {
+    // Set up GPIO and button interrupts
+    let gpio = Gpio::new().expect("Initialize GPIO");
+
     let id = read_id();
     let (tx_main, rx_main) = channel();
 
@@ -80,8 +81,6 @@ async fn main() {
         .await
         .unwrap();
 
-    // Set up GPIO and button interrupts
-    let gpio = Gpio::new().expect("Initialize GPIO");
     let mut button_a = gpio
         .get(BUTTON_A_PIN)
         .expect("Get GPIO pin for A button")
@@ -91,6 +90,20 @@ async fn main() {
         .get(BUTTON_B_PIN)
         .expect("Get GPIO pin for B button")
         .into_input_pulldown();
+
+    if button_a.is_high() && button_b.is_high() {
+        // Enter pairing mode:
+        println!("Entering pairing mode");
+        let msg = ControllerMessage::DevicePairing
+            .to_ws_message()
+            .expect("Failed to serialize pairing message");
+        write
+            .send(msg)
+            .await
+            .expect("Failed to send pairing to server");
+    }
+
+    println!("Left pairing mode");
 
     let tx_a = tx_main.clone();
     button_a
@@ -143,27 +156,22 @@ async fn main() {
         let mut prev_roll = 0.0;
         let mut prev_yaw = 0.0;
 
-        // We'll track time in each loop for the gyro integration
         let dt = ANGLE_WAIT_TIME as f32 / 1000.0;
 
         loop {
             if let Some((pitch, roll, yaw)) = read_mpu6050(
                 &mut i2c, dt, gx_offset, gy_offset, gz_offset, prev_pitch, prev_roll, prev_yaw,
             ) {
-                // Update local copy
                 prev_pitch = pitch;
                 prev_roll = roll;
                 prev_yaw = yaw;
 
-                // Update the shared angles
                 if let Ok(mut lock) = angles_clone.lock() {
                     *lock = (pitch, roll, yaw);
                 }
 
-                // Send a message to the main thread
                 let msg = ControllerMessage::AngleInfo(pitch, 0., roll);
                 if tx_main_clone.send(msg).is_err() {
-                    // If sending fails (main thread closed?), just break
                     break;
                 }
             }
