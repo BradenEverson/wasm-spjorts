@@ -1,6 +1,6 @@
 //! Bevy bowling game
 
-use bevy::prelude::*;
+use bevy::{asset::AssetMetaCheck, prelude::*};
 use bevy_rapier3d::{
     plugin::{NoUserData, RapierPhysicsPlugin},
     prelude::{RigidBody, Velocity},
@@ -29,12 +29,15 @@ impl Runner {
         let (write, read) = crossbeam_channel::unbounded();
 
         let mut app = App::new();
-        app.add_plugins(DefaultPlugins)
-            .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
-            .add_plugins(BowlingTurnPlugin)
-            .insert_resource(ActionReader(read))
-            .add_systems(Startup, setup)
-            .add_systems(Update, (handle_input, handle_ball, check_pins, update_ui));
+        app.add_plugins(DefaultPlugins.set(AssetPlugin {
+            meta_check: AssetMetaCheck::Never,
+            ..default()
+        }))
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugins(BowlingTurnPlugin)
+        .insert_resource(ActionReader(read))
+        .add_systems(Startup, setup)
+        .add_systems(Update, (handle_input, handle_ball, check_pins, update_ui));
 
         Runner { app, write }
     }

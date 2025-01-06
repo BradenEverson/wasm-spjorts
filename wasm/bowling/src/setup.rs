@@ -1,5 +1,7 @@
 //! Scene setup methods
 
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::{
     Ccd, Collider, ColliderMassProperties, Friction, GravityScale, Restitution, RigidBody, Velocity,
@@ -31,7 +33,7 @@ pub const BALL_SPEED: f32 = 10.0;
 /// Pin radius
 const PIN_RADIUS: f32 = 0.15;
 /// Pin height
-const PIN_HEIGHT: f32 = 0.65;
+const PIN_HEIGHT: f32 = 0.8;
 
 /// Scorecard identifying Component
 #[derive(Component)]
@@ -54,7 +56,10 @@ pub fn setup(
     mut commands: Commands<'_, '_>,
     mut meshes: ResMut<'_, Assets<Mesh>>,
     mut materials: ResMut<'_, Assets<StandardMaterial>>,
+    asset_server: Res<'_, AssetServer>,
 ) {
+    let bowling_pin = asset_server.load("/frontend/sprites/bowling/pin.png");
+
     // Spawn Lane
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::new(LANE_WIDTH, 0.1, LANE_LENGTH))),
@@ -80,11 +85,18 @@ pub fn setup(
             let x_pos = start_pos + ((pin as f32) * PIN_RADIUS * 4.0);
 
             let point = Transform::from_xyz(x_pos, PIN_HEIGHT * 0.5 + 0.05, z_pos);
+            let material_handle = materials.add(StandardMaterial {
+                base_color_texture: Some(bowling_pin.clone()),
+                alpha_mode: AlphaMode::Blend,
+                cull_mode: None,
+                unlit: true,
+                ..default()
+            });
 
             commands.spawn((
-                Mesh3d(meshes.add(Cylinder::new(PIN_RADIUS, PIN_HEIGHT))),
-                MeshMaterial3d(materials.add(Color::hsl(33.0, 0.0, 0.93))),
-                point.clone(),
+                Mesh3d(meshes.add(Rectangle::new(PIN_HEIGHT, PIN_HEIGHT))),
+                MeshMaterial3d(material_handle),
+                point.clone().with_rotation(Quat::from_rotation_y(PI)),
                 Pin::new(point),
                 Name::new(format!("Pin {pin} in Row {row}")),
                 Collider::cylinder(PIN_HEIGHT * 0.5, PIN_RADIUS),
