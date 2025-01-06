@@ -59,6 +59,7 @@ pub fn setup(
     asset_server: Res<'_, AssetServer>,
 ) {
     let bowling_pin = asset_server.load("/frontend/sprites/bowling/pin.png");
+    let bowling_ball = asset_server.load("/frontend/sprites/bowling/ball.png");
 
     // Spawn Lane
     commands.spawn((
@@ -70,8 +71,7 @@ pub fn setup(
         Restitution::coefficient(0.01),
         RigidBody::Fixed,
         Friction::coefficient(0.04),
-        Visibility::Visible,
-        Hideable,
+        Visibility::Hidden,
     ));
 
     // Spawn pins
@@ -113,10 +113,20 @@ pub fn setup(
         }
     }
 
+    let ball_material_handle = materials.add(StandardMaterial {
+        base_color: Color::srgb(1.0, 0.0, 0.0),
+        base_color_texture: Some(bowling_ball.clone()),
+        alpha_mode: AlphaMode::Blend,
+        cull_mode: None,
+        unlit: true,
+        ..default()
+    });
+
     // Spawn Ball
     commands.spawn((
-        Mesh3d(meshes.add(Sphere::new(0.3))),
-        MeshMaterial3d(materials.add(Color::hsl(33.0, 0.90, 0.61))),
+        //Mesh3d(meshes.add(Sphere::new(0.3))),
+        Mesh3d(meshes.add(Rectangle::new(0.6, 0.6))),
+        MeshMaterial3d(ball_material_handle),
         Transform::from_xyz(0.0, 0.3, BALL_START_Z).looking_at(Vec3::ZERO, Vec3::Y),
         Ball::default(),
         Name::new("Ball"),
@@ -140,6 +150,12 @@ pub fn setup(
     // Spawn UI Camera
     commands.spawn(Camera2d::default());
     commands.spawn((Text::new(":D"), TextColor::WHITE, Scorecard));
+
+    commands.spawn((
+        Sprite::from_image(asset_server.load("/frontend/sprites/bowling/bg.png")),
+        Visibility::Visible,
+        Hideable,
+    ));
 
     commands
         .spawn((

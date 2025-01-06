@@ -218,9 +218,19 @@ impl BowlingState {
     pub fn set_players(&mut self, num: usize) {
         self.player_frame_scores = vec![[(Score::None, Score::None); 10]; num]
     }
+
+    /// Gets who's turn it is
+    pub fn get_turn(&self) -> usize {
+        self.turn
+    }
 }
 
 impl BowlingStateWrapper {
+    /// Gets who's turn it is
+    pub fn get_turn(&self) -> usize {
+        self.0.read().unwrap().get_turn()
+    }
+
     /// Sets the current score for the current frame to a spare
     pub fn set_spare(&self) {
         self.0.write().unwrap().set_spare()
