@@ -2,6 +2,18 @@
 
 use serde::Serialize;
 
+/// Render valid html for an ID being connected to
+pub fn render_id_connection(id: u64) -> String {
+    format!(
+        r#"
+            <div class="id-box" hx-get="/connect?id={}" hx-swap="none" value="{}">
+                <div class="name">#{}</div>
+            </div>
+            "#,
+        id, id, id
+    )
+}
+
 /// Game information for rendering
 #[derive(Serialize)]
 pub struct Game {
@@ -99,7 +111,9 @@ impl Game {
 
                         socket.addEventListener("open", () => {{
                             console.log("WebSocket connection opened");
-                            const buffer = createWsMessage(1, 1);
+                            let id = parseInt(localStorage.getItem("ID"));
+                            console.log(`ID: ${{id}}`);
+                            const buffer = createWsMessage(1, id);
 
                             socket.send(buffer);
                             console.log("ArrayBuffer sent:", buffer);

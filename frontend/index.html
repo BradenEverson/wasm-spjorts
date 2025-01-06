@@ -11,10 +11,23 @@
         <div class="container">
             <div class="title"><b class="white">Frii</b> Spjörts</div>
             <div class="menu">
-                <button hx-get="/game" hx-target="body">Play</button>
-                <button hx-get="/connect-controller" hx-target="body">Connect Controller</button>
+                <button hx-get="/game" hx-target="body" id="play">Play</button>
+                <button hx-get="frontend/connect_controller.html" hx-target="body">Connect Controller</button>
             </div>
         </div>
+
+        <script>
+            const actionButton = document.getElementById("play");
+            if (localStorage.getItem('ID')) {
+                actionButton.innerText = "Play";
+                actionButton.disabled = false; 
+                actionButton.classList.remove('disabled');
+            } else {
+                actionButton.innerText = "Connect A Controller to Play";
+                actionButton.disabled = true;
+                actionButton.classList.add('disabled');
+            }
+        </script>
     </body>
 </html>
 

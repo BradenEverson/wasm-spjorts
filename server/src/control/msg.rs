@@ -19,6 +19,9 @@ pub enum ControllerMessage {
     /// Update current angle (pitch, roll, yaw)
     #[deku(id = 0x04)]
     AngleInfo(f32, f32, f32),
+    /// Controller is accepting new client listener connections
+    #[deku(id = 0x05)]
+    DevicePairing
 }
 
 /// Messages a web socket connection can send before it's upgraded to a Controller or kept as is

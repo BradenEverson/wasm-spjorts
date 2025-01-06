@@ -15,11 +15,14 @@ use hyper_tungstenite::is_upgrade_request;
 use hyper_util::rt::TokioIo;
 use tokio::sync::{mpsc::Sender, Mutex};
 use tokio_tungstenite::{tungstenite::Message, WebSocketStream};
+use url::Url;
 
 use crate::{
     control::{msg::WsMessage, Controller},
     serve::{registry::GAMES, SpjortState, WsConnectionType},
 };
+
+use super::registry::render_id_connection;
 
 /// Web socket write stream
 pub type WebsocketWriteStream = SplitSink<WebSocketStream<TokioIo<Upgraded>>, Message>;
@@ -54,9 +57,19 @@ async fn handle_ws_binary(
 ) {
     match controller_type {
         WsConnectionType::Controller(id) => {
-            let controller = &state.lock().await.controllers[&id];
-            let mut controller = controller.lock().await;
-            controller.broadcast(buf).await;
+            match buf[0] {
+                0x05 => {
+                    // Controller ID wants to be paired
+                    {
+                        state.lock().await.set_pairing_id(*id);
+                    }
+                }
+                _ => {
+                    let controller = &state.lock().await.controllers[&id];
+                    let mut controller = controller.lock().await;
+                    controller.broadcast(buf).await
+                }
+            }
         }
         WsConnectionType::None => {
             let (_, val) = WsMessage::from_bytes((buf, 0)).unwrap();
@@ -153,6 +166,20 @@ impl Service<Request<body::Incoming>> for SpjortService {
                             .status(StatusCode::OK)
                             .body(Full::new(Bytes::copy_from_slice(games.as_bytes())))
                     }
+                    "/controllers" => {
+                        let ids = {
+                            futures::executor::block_on(self.state.lock()).get_pairing_devices()
+                        };
+                        let controller_ids = ids
+                            .iter()
+                            .map(|id| render_id_connection(*id))
+                            .collect::<Vec<_>>()
+                            .join(" ");
+                        response
+                            .header("content-type", "application/json")
+                            .status(StatusCode::OK)
+                            .body(Full::new(Bytes::copy_from_slice(controller_ids.as_bytes())))
+                    }
                     "/favicon.ico" => {
                         let mut buf = vec![];
                         let mut page =
@@ -162,6 +189,34 @@ impl Service<Request<body::Incoming>> for SpjortService {
                         response
                             .status(StatusCode::OK)
                             .body(Full::new(Bytes::copy_from_slice(&buf)))
+                    }
+                    "/connect" => {
+                        let uri = req.uri().to_string();
+                        let request_url =
+                            Url::parse(&format!("https://dumbfix.com/{}", uri)).unwrap();
+                        let potential_id = request_url.query_pairs().find(|(key, _)| key == "id");
+                        if let Some((_, id)) = potential_id {
+                            if let Ok(id) = id.parse() {
+                                let id_exists = {
+                                    futures::executor::block_on(self.state.lock())
+                                        .connect_controller(id)
+                                };
+
+                                if id_exists {
+                                    let res = response
+                                        .header("content-type", "application/json")
+                                        .status(StatusCode::OK)
+                                        .body(Full::new(Bytes::copy_from_slice(b"true")));
+
+                                    return Box::pin(async { res });
+                                }
+                            }
+                        }
+
+                        response
+                            .header("content-type", "application/json")
+                            .status(StatusCode::OK)
+                            .body(Full::new(Bytes::copy_from_slice(b"false")))
                     }
                     fs if fs.starts_with("/frontend/") || fs.starts_with("/wasm") => {
                         let mut buf = vec![];

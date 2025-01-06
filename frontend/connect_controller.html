@@ -1,0 +1,24 @@
+<body>
+    <div class="container">
+        <div class="title"><b class="white">Available Controllers:</b></div>
+        <div hx-get="/controllers" hx-trigger="load, every 5s" hx-target="this" hx-swap="innerHTML">
+            <!-- available IDs will load here dynamically -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('htmx:afterRequest', function(event) {
+            const target = event.target;
+            if (target.classList.contains("id-box")) {
+                const jsonResponse = JSON.parse(event.detail.xhr.response);
+
+                if (jsonResponse) {
+                    let val = target.getAttribute("value");
+                    alert(`Connected to controller with ID ${val}!`);
+                    localStorage.setItem("ID", val);
+                    window.location.href = "/";
+                }
+            }
+        });
+    </script>
+</body>

@@ -1,6 +1,9 @@
 //! Server State and Connection Handlers
 
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use tokio::sync::{
     mpsc::{Receiver, Sender},
@@ -25,6 +28,8 @@ pub struct SpjortState {
     /// How long ago controllers have checked in to the server, they will be kicked if passing a
     /// tick threshold
     time_since_heartbeat: HashMap<ControllerId, usize>,
+    /// What controller IDs are currently waiting to pair with a listener
+    pairing_controllers: HashSet<u64>,
 }
 
 impl SpjortState {
@@ -41,6 +46,7 @@ impl SpjortState {
             Self {
                 controllers: HashMap::new(),
                 time_since_heartbeat: HashMap::new(),
+                pairing_controllers: HashSet::new(),
             },
             sender,
             receiver,
@@ -52,6 +58,22 @@ impl SpjortState {
         let id = { controller.lock().await.id };
         self.controllers.insert(id, controller);
         self.time_since_heartbeat.insert(id, 0);
+    }
+
+    /// Registers a new controller as awaiting a pairing
+    pub fn set_pairing_id(&mut self, controller_id: u64) {
+        self.pairing_controllers.insert(controller_id);
+    }
+
+    /// Pops an ID from pairing as it connects. Returns true if it was removed and false if it
+    /// didn't exist
+    pub fn connect_controller(&mut self, id: u64) -> bool {
+        self.pairing_controllers.remove(&id)
+    }
+
+    /// Returns all devices as an *unreferenced* list of ids (so we don't get any nasty locks)
+    pub fn get_pairing_devices(&self) -> Vec<u64> {
+        self.pairing_controllers.iter().cloned().collect()
     }
 
     /// Checks all heart beats and removes any connections that are higher than the limit
