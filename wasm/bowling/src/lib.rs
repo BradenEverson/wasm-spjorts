@@ -57,19 +57,41 @@ impl Runner {
 
 /// Handles resetting the ball and pins if they go too far
 fn handle_ball(
-    mut ball: Query<'_, '_, (&mut Transform, &mut Ball, &mut Velocity, &mut RigidBody)>,
+    mut ball: Query<
+        '_,
+        '_,
+        (
+            &mut Transform,
+            &mut Ball,
+            &mut Velocity,
+            &mut RigidBody,
+            &mut Visibility,
+        ),
+    >,
     state: Res<'_, BowlingStateWrapper>,
     time: Res<'_, Time>,
 ) {
-    if let Ok((mut transform, mut ball, mut velocity, mut rigid)) = ball.get_single_mut() {
+    if let Ok((mut transform, mut ball, mut velocity, mut rigid, mut visibility)) =
+        ball.get_single_mut()
+    {
         if transform.translation.y <= -6.0 || (ball.released && *velocity == Velocity::zero()) {
-            reset_ball(&mut transform, &mut ball, &mut rigid, &mut velocity);
+            reset_ball(
+                &mut transform,
+                &mut ball,
+                &mut rigid,
+                &mut velocity,
+                &mut visibility,
+            );
             state.inc_throw_num();
         } else {
             if let Some(direction) = &mut ball.moving {
                 let threshold = LANE_WIDTH / 2.0;
                 let dx = if *direction { 1.5 } else { -1.5 };
                 transform.translation.x += dx * time.delta_secs();
+
+                if transform.translation.y <= -0.05 {
+                    *visibility = Visibility::Hidden;
+                }
 
                 if transform.translation.x >= threshold {
                     *direction = false
@@ -158,6 +180,7 @@ pub fn reset_ball(
     ball: &mut Ball,
     rigid: &mut RigidBody,
     velocity: &mut Velocity,
+    visibility: &mut Visibility,
 ) {
     transform.translation = Vec3::new(0.0, 0.3, BALL_START_Z);
     transform.rotation = Quat::IDENTITY;
@@ -166,5 +189,6 @@ pub fn reset_ball(
     ball.rotations = vec![];
     *velocity = Velocity::zero();
     *rigid = RigidBody::KinematicPositionBased;
+    *visibility = Visibility::Visible;
     ball.released = false;
 }

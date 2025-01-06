@@ -75,8 +75,7 @@ pub fn setup(
         Restitution::coefficient(0.01),
         RigidBody::Fixed,
         Friction::coefficient(0.04),
-        Visibility::Visible,
-        Hideable,
+        Visibility::Hidden,
     ));
 
     // Spawn pins
