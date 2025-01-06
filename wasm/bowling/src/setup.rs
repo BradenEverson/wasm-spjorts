@@ -64,14 +64,19 @@ pub fn setup(
     // Spawn Lane
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::new(LANE_WIDTH, 0.1, LANE_LENGTH))),
-        MeshMaterial3d(materials.add(Color::hsl(33.0, 0.20, 0.76))),
+        MeshMaterial3d(materials.add(StandardMaterial {
+            base_color: Color::hsl(44.0, 0.31, 0.71),
+            perceptual_roughness: 0.1,
+            ..default()
+        })),
         Transform::from_xyz(0.0, -0.05, LANE_LENGTH * 0.5 - 10.0),
         Name::new("Lane"),
         Collider::cuboid(LANE_WIDTH * 0.5, 0.05, LANE_LENGTH * 0.5),
         Restitution::coefficient(0.01),
         RigidBody::Fixed,
         Friction::coefficient(0.04),
-        Visibility::Hidden,
+        Visibility::Visible,
+        Hideable,
     ));
 
     // Spawn pins
@@ -149,7 +154,12 @@ pub fn setup(
 
     // Spawn UI Camera
     commands.spawn(Camera2d::default());
-    commands.spawn((Text::new(":D"), TextColor::WHITE, Scorecard));
+    commands.spawn((
+        Text::new(":D"),
+        TextColor::WHITE,
+        BackgroundColor(Color::BLACK),
+        Scorecard,
+    ));
 
     commands.spawn((
         Sprite::from_image(asset_server.load("/frontend/sprites/bowling/bg.png")),
