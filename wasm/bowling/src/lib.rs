@@ -147,7 +147,7 @@ fn handle_input(
                 }
                 JsMessage::Rotate(pitch, _, yaw) => {
                     if !ball.released {
-                        let new = Quat::from_euler(EulerRot::XYZ, pitch, yaw, 0f32);
+                        let new = Quat::from_euler(EulerRot::XYZ, pitch, 0f32, yaw);
                         transform.rotation = new;
                         ball.rotations.push(new);
                     }
