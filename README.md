@@ -29,4 +29,4 @@ Long story short there's a large chain of communication that essentially goes fr
   * Rapier3d is used for all physics simulation, which allows for (somewhat) accurate bowling!
   * Still working out the kinks on one-to-one physical representations of bowling balls and pins.
     
-    ![bowling](https://github.com/user-attachments/assets/7835c989-e528-4faa-9516-1a355acdbea9)
+    https://github.com/user-attachments/assets/bc612fdf-85e5-4b70-84ed-338842850bce
