@@ -27,6 +27,8 @@ Long story short there's a large chain of communication that essentially goes fr
   * Implementation of a standard bowling game, currently supports moving along the x axis for aiming.
   * "Throwing" the ball via aiming with the physical controller's angle data and hitting the A button for release propels the ball forward at that angle with velocity according to the rate at which the ball is thrown
   * Rapier3d is used for all physics simulation, which allows for (somewhat) accurate bowling!
+  * Multiplayer pass and play mechanisms in place, allowing a number of players to be set through JS input that is piped over to the initial game state
   * Still working out the kinks on one-to-one physical representations of bowling balls and pins.
+  * (Poorly) Hand drawn 2.5d graphics :D
     
     https://github.com/user-attachments/assets/bc612fdf-85e5-4b70-84ed-338842850bce
